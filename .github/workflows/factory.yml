@@ -37,10 +37,20 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache Kokoro voice model
+        uses: actions/cache@v4
+        with:
+          path: ~/kokoro
+          key: kokoro-v1.0
+
       - name: Install
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-          pip install edge-tts==7.3.1
+          pip install edge-tts==7.3.1 kokoro-onnx soundfile
+          mkdir -p ~/kokoro
+          B=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
+          [ -f ~/kokoro/kokoro-v1.0.onnx ] || curl -sSL -o ~/kokoro/kokoro-v1.0.onnx $B/kokoro-v1.0.onnx
+          [ -f ~/kokoro/voices-v1.0.bin ] || curl -sSL -o ~/kokoro/voices-v1.0.bin $B/voices-v1.0.bin
           npm ci
 
       - name: Make Shorts (script -> fact-check -> voice -> animation -> QA)
@@ -50,6 +60,7 @@ jobs:
           COUNT: ${{ github.event.inputs.count || '5' }}
           TOPIC: ${{ github.event.inputs.topic }}
           RENDER_CONCURRENCY: '100%'
+          BRAINY_TTS: auto
         run: node factory/run.mjs --count "$COUNT" --topic "$TOPIC"
 
       - name: Remember used topics

@@ -69,18 +69,21 @@ async function writeScript(category, topic) {
 function buildVoice(spec, id) {
   const jobDir = path.join(ROOT, 'jobs', id);
   run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir]);
-  const words = JSON.parse(fs.readFileSync(path.join(jobDir, 'words.json'), 'utf8')).scenes;
+  const voice = JSON.parse(fs.readFileSync(path.join(jobDir, 'words.json'), 'utf8'));
+  const words = voice.scenes;
+  const files = voice.files || words.map((_, k) => `scene_${k}.mp3`);
+  log(`  voice engine: ${voice.engine || 'edge'}`);
   const GAP = 0.22;
   let t = 0;
   const scenes = words.map((ws, k) => {
-    const d = duration(path.join(jobDir, `scene_${k}.mp3`));
+    const d = duration(path.join(jobDir, files[k]));
     const sc = {start: t, end: t + d, words: ws.map((w) => ({w: w.w, s: +(w.s + t).toFixed(3), e: +(w.e + t).toFixed(3)}))};
     t += d + GAP;
     return sc;
   });
   const pubDir = path.join(ROOT, 'public/jobs', id);
   fs.mkdirSync(pubDir, {recursive: true});
-  const inputs = words.flatMap((_, k) => ['-i', path.join(jobDir, `scene_${k}.mp3`)]);
+  const inputs = files.flatMap((f) => ['-i', path.join(jobDir, f)]);
   const pads = words.map((_, k) => `[${k}:a]apad=pad_dur=${GAP}[a${k}]`).join(';');
   const cat = words.map((_, k) => `[a${k}]`).join('') + `concat=n=${words.length}:v=0:a=1[out]`;
   tool('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', `${pads};${cat}`, '-map', '[out]', '-ar', '44100', '-b:a', '160k', path.join(pubDir, 'voice.mp3')]);
