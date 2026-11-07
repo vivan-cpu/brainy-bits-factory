@@ -1,0 +1,1 @@
+{"jobId":"sample","spec":{"world":"ocean","scenes":[{"type":"hook","narration":"x","items":[]}]},"timing":{"total":3,"scenes":[{"start":0,"end":3,"words":[{"w":"Hello","s":0.1,"e":0.5}]}]}}

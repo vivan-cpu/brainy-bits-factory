@@ -1,0 +1,79 @@
+name: Brainy Bits factory
+
+on:
+  schedule:
+    - cron: '30 0 * * *'   # every day 06:00 India time -> 5 Shorts
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'How many Shorts to make'
+        default: '1'
+      topic:
+        description: 'Optional topic for the first Short (leave empty = Brainy picks)'
+        default: ''
+
+permissions:
+  contents: write
+
+concurrency:
+  group: factory
+  cancel-in-progress: false
+
+jobs:
+  make:
+    runs-on: ubuntu-latest
+    timeout-minutes: 170
+    env:
+      HAS_YT: ${{ secrets.YT_REFRESH_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install edge-tts==7.3.1
+          npm ci
+
+      - name: Make Shorts (script -> fact-check -> voice -> animation -> QA)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHON: python
+          COUNT: ${{ github.event.inputs.count || '5' }}
+          TOPIC: ${{ github.event.inputs.topic }}
+          RENDER_CONCURRENCY: '100%'
+        run: node factory/run.mjs --count "$COUNT" --topic "$TOPIC"
+
+      - name: Remember used topics
+        if: always()
+        run: |
+          git config user.name "brainy-bot"
+          git config user.email "brainy-bot@users.noreply.github.com"
+          git add data/history.json
+          git diff --cached --quiet || (git commit -m "history: topics from run ${{ github.run_number }}" && git push)
+
+      - name: Publish the Shorts as a release (download them on your phone)
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="shorts-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" out/*.mp4 --title "Brainy Bits $(date -u +'%d %b %Y %H:%M') UTC" --notes-file out/release-notes.md
+
+      - name: Upload to YouTube (only when YouTube secrets are set)
+        if: success() && env.HAS_YT == 'true'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+          YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
+          YT_SCHEDULE: ${{ vars.YT_SCHEDULE || '1' }}
+        run: node factory/youtube.mjs
