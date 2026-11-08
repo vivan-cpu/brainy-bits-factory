@@ -80,7 +80,9 @@ jobs:
           gh release create "$TAG" out/*.mp4 --title "Brainy Bits $(date -u +'%d %b %Y %H:%M') UTC" --notes-file out/release-notes.md
 
       - name: Upload to YouTube (only when YouTube secrets are set)
-        if: success() && env.HAS_YT == 'true'
+        # off by default: until Google's API audit passes, uploads are locked private and only burn the channel's daily upload limit.
+        # Turn on with repo variable YT_UPLOAD=1 once approved.
+        if: success() && env.HAS_YT == 'true' && vars.YT_UPLOAD == '1'
         env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
           YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
