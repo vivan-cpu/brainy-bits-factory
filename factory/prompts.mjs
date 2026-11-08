@@ -17,8 +17,10 @@ HARD RULES
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
 - The title must be literally true and fully delivered by the script.
 - 5 to 7 scenes. Total narration 60 to 85 words (25 to 32 seconds spoken).
-- Scene 1 MUST be type "hook": one gripping sentence (10-18 words) teasing up to 3 things, each shown as a badge.
-- Last scene MUST be type "outro" with narration exactly: "Subscribe to Brainy Bits for more weird facts!"
+- Scene 1 MUST be type "hook" and must stop the scroll in the first 2 seconds: ONE short, bold sentence (6-14 words) that states the most shocking part of the fact or asks a question the viewer can't ignore. Make it concrete and specific. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Good examples: "This animal can survive in space with no suit." / "Your body glows in the dark. You just can't see it." Up to 3 badges tease what's coming.
+- "hookText": 2-5 punchy words shown huge on screen in the first second (for example "IT SURVIVES IN SPACE"). No emojis.
+- Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part...").
+- Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
@@ -38,6 +40,7 @@ SCENE TYPES (fields)
 OUTPUT exactly one JSON object:
 {
  "topic": "short topic name",
+ "hookText": "2-5 WORD HOOK",
  "category": "${category}",
  "world": "...",
  "title": "curious YouTube title, max 60 characters, no emojis",

@@ -1283,3 +1283,4 @@ zany_face
 zebra
 zipper_mouth_face
 zzz
+thumbs_up

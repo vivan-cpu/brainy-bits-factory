@@ -5,7 +5,7 @@ import path from 'node:path';
 import {askJSON} from './gemini.mjs';
 import {CATEGORIES, scriptPrompt, factCheckPrompt} from './prompts.mjs';
 import {checkSpec, checkVideo, collectEmojis} from './qa.mjs';
-import {duration, tool, run, npx} from './media.mjs';
+import {duration, tool, run, npx, pcmMono} from './media.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
 const arg = (name, def) => { const i = process.argv.indexOf(`--${name}`); return i > -1 ? process.argv[i + 1] : def; };
@@ -44,7 +44,9 @@ function repairSpec(spec) {
     if (s.right) s.right.emoji = repairEmoji(s.right.emoji);
   }
   const last = spec.scenes[spec.scenes.length - 1];
-  if (last?.type === 'outro') last.narration = 'Subscribe to Brainy Bits for more weird facts!';
+  if (last?.type === 'outro') last.narration = 'Like, share and subscribe to Brainy Bits for more weird facts!';
+  if (!spec.hookText) spec.hookText = String(spec.title || '').split(/\s+/).slice(0, 4).join(' ');
+  spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{N}\s?!'%-]/gu, '').split(/\s+/).slice(0, 5).join(' ');
   if (!['ocean', 'space', 'body', 'lab', 'sky', 'forest'].includes(spec.world)) spec.world = 'lab';
   return spec;
 }
@@ -66,9 +68,17 @@ async function writeScript(category, topic) {
   throw new Error('could not produce a script that passes checks');
 }
 
+// Vivan's picks: alternate Guy (energetic) and Brian (heavy) video by video; Kokoro fallbacks alternate too
+const VOICES = [
+  {BRAINY_VOICE: 'en-US-GuyNeural', BRAINY_RATE: '+10%', BRAINY_PITCH: '-2Hz', KOKORO_VOICE: 'am_fenrir'},
+  {BRAINY_VOICE: 'en-US-BrianMultilingualNeural', BRAINY_RATE: '+8%', BRAINY_PITCH: '-4Hz', KOKORO_VOICE: 'am_onyx'},
+];
+
 function buildVoice(spec, id) {
   const jobDir = path.join(ROOT, 'jobs', id);
-  run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir]);
+  const voice0 = VOICES[history.length % VOICES.length];
+  log(`  narrator: ${voice0.BRAINY_VOICE}`);
+  run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir], {env: {...process.env, ...voice0}});
   const voice = JSON.parse(fs.readFileSync(path.join(jobDir, 'words.json'), 'utf8'));
   const words = voice.scenes;
   const files = voice.files || words.map((_, k) => `scene_${k}.mp3`);
@@ -87,7 +97,28 @@ function buildVoice(spec, id) {
   const pads = words.map((_, k) => `[${k}:a]apad=pad_dur=${GAP}[a${k}]`).join(';');
   const cat = words.map((_, k) => `[a${k}]`).join('') + `concat=n=${words.length}:v=0:a=1[out]`;
   tool('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', `${pads};${cat}`, '-map', '[out]', '-ar', '44100', '-b:a', '160k', path.join(pubDir, 'voice.mp3')]);
-  return {total: t - GAP, scenes};
+  return {total: t - GAP, scenes, amp: loudness(path.join(pubDir, 'voice.mp3'))};
+}
+
+// Per-frame (30 fps) loudness of the voice, 0..1, used to drive Brainy's mouth so lip-sync matches the real audio
+function loudness(file) {
+  const SR = 9000, FR = 30, per = SR / FR; // 300 samples per frame (must be an integer)
+  const pcm = pcmMono(file, SR);
+  const n = Math.floor(pcm.length / 2 / per);
+  const rms = new Array(n).fill(0);
+  for (let i = 0; i < n; i++) {
+    let s = 0;
+    for (let j = 0; j < per; j++) { const v = pcm.readInt16LE((i * per + j) * 2) / 32768; s += v * v; }
+    rms[i] = Math.sqrt(s / per);
+  }
+  const sorted = [...rms].sort((a, b) => a - b);
+  const ref = sorted[Math.floor(sorted.length * 0.95)] || 1;
+  return rms.map((v, i) => {
+    const prev = rms[i - 1] ?? v, next = rms[i + 1] ?? v;
+    const sm = (prev + 2 * v + next) / 4;
+    const x = Math.max(0, Math.min(1, sm / ref));
+    return x < 0.12 ? 0 : +x.toFixed(2);
+  });
 }
 
 function render(spec, timing, id) {

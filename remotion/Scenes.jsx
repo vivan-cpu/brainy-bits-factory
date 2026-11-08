@@ -120,9 +120,11 @@ export const Stat = ({scene, cue}) => {
   return (
     <AbsoluteFill>
       <Emoji name={scene.emoji} size={300} style={{left: 390, top: 250, opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.5, 1]), translate: `0px ${Math.sin(f / 20) * 10}px`}} />
-      <div style={{position: 'absolute', top: 600, width: '100%', textAlign: 'center', fontSize: 200, fontWeight: 800, color: '#ffd54a',
+      <div style={{position: 'absolute', top: 590, left: 40, right: 40, textAlign: 'center', fontWeight: 800, color: '#ffd54a', whiteSpace: 'nowrap',
+        fontSize: Math.min(200, Math.floor(1500 / Math.max(4, (scene.prefix || '').length + fmt(target, dec).length + 1))),
         letterSpacing: -6, textShadow: '0 10px 40px rgba(0,0,0,.45)', opacity: fadeIn(pop(f, at))}}>
-        {scene.prefix || ''}{fmt(v, dec)}{scene.suffix || ''}
+        {scene.prefix || ''}{fmt(v, dec)}
+        {scene.suffix ? <span style={{fontSize: '0.42em', letterSpacing: 0, marginLeft: 10}}>{String(scene.suffix).trim()}</span> : null}
       </div>
       <Label text={scene.label} x={540} y={850} w={900} size={56} style={{opacity: fadeIn(pop(f, at + 10))}} />
     </AbsoluteFill>
@@ -180,13 +182,38 @@ export const Journey = ({scene, dur}) => {
 };
 
 // ---------- outro: subscribe button (Brainy is drawn by Video) ----------
-export const Outro = () => {
+// LIKE / SHARE / SUBSCRIBE chips pop in as each word is spoken
+const CtaChips = ({cue}) => {
   const f = useCurrentFrame();
+  const chips = [
+    {icon: 'thumbs_up', label: 'LIKE', word: 'like', x: 150},
+    {icon: 'right_arrow_curving_left', label: 'SHARE', word: 'share', x: 435, flip: true},
+    {icon: 'bell', label: 'SUBSCRIBE', word: 'subscribe', x: 720},
+  ];
+  return chips.map((c, i) => {
+    const p = pop(f, cue(c.word, 0.1 + i * 0.12, true));
+    return (
+      <div key={i} style={{position: 'absolute', left: c.x, top: 160, width: 210, height: 250, opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.3, 1]),
+        translate: `0px ${Math.sin((f + i * 12) / 14) * 6}px`}}>
+        <div style={{position: 'absolute', left: 15, top: 0, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,.12)',
+          border: '2px solid rgba(255,255,255,.25)', boxShadow: '0 18px 40px rgba(0,0,0,.25)'}}>
+          <Emoji name={c.icon} size={120} style={{left: 30, top: 30, scale: c.flip ? '-1 1' : '1 1'}} />
+        </div>
+        <div style={{position: 'absolute', top: 196, width: '100%', textAlign: 'center', fontWeight: 800, fontSize: 36, color: '#fff', letterSpacing: 1}}>{c.label}</div>
+      </div>
+    );
+  });
+};
+
+export const Outro = ({cue}) => {
+  const f = useCurrentFrame();
+  const subAt = cue ? cue('subscribe', 0.45, true) : FADE + 36;
   const b = pop(f, FADE + 8);
-  const press = FADE + 36;
+  const press = Math.max(FADE + 20, subAt + 10);
   const down = interpolate(f, [press, press + 3, press + 8], [1, 0.92, 1], clamp);
   const done = f >= press + 2;
-  return (
+  return (<>
+    {cue && <CtaChips cue={cue} />}
     <div style={{position: 'absolute', left: 270, top: 950, width: 540, height: 128, borderRadius: 64,
       background: done ? '#3b3f4f' : 'linear-gradient(180deg,#ff3b3b,#d91c1c)', color: '#fff', fontWeight: 800, fontSize: 56, letterSpacing: 2,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -194,7 +221,7 @@ export const Outro = () => {
       opacity: fadeIn(b), scale: interpolate(b, [0, 1], [0.6, 1]) * down}}>
       {done ? 'SUBSCRIBED' : 'SUBSCRIBE'}
     </div>
-  );
+  </>);
 };
 
 export const SCENES = {hook: Hook, trio: Trio, compare: Compare, stat: Stat, orbit: Orbit, journey: Journey, outro: Outro};

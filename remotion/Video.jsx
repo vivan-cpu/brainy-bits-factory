@@ -11,6 +11,27 @@ const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export const durationFor = (timing) => Math.ceil((timing.total + 0.7) * FPS);
+const HOOK_FRAMES = 48; // big hook title is on screen for the first ~1.6s
+
+// Slams a 2-5 word hook onto the screen in the first second, then gets out of the way
+const HookTitle = ({text}) => {
+  const f = useCurrentFrame();
+  if (!text || f > HOOK_FRAMES + 8) return null;
+  const p = spring({frame: f, fps: FPS, config: {damping: 9, stiffness: 220, mass: 0.7}});
+  const out = interpolate(f, [HOOK_FRAMES - 4, HOOK_FRAMES + 8], [1, 0], clamp);
+  const shake = f < 10 ? Math.sin(f * 2.2) * (10 - f) * 1.2 : 0;
+  const words = String(text).toUpperCase().split(/\s+/);
+  return (
+    <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', padding: '0 70px', opacity: out}}>
+      <div style={{textAlign: 'center', fontWeight: 800, fontSize: words.join(' ').length > 18 ? 118 : 140, lineHeight: 1.02, letterSpacing: -2,
+        color: '#fff', textShadow: '0 12px 40px rgba(0,0,0,.6)', scale: interpolate(p, [0, 1], [1.8, 1]), translate: `${shake}px 0px`, marginTop: -120}}>
+        {words.map((w, i) => (
+          <span key={i} style={{color: i === words.length - 1 ? '#ffd54a' : '#fff', marginRight: 22, display: 'inline-block'}}>{w}</span>
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
 
 const SceneWrap = ({dur, first, last, children}) => {
   const f = useCurrentFrame();
@@ -35,9 +56,15 @@ const BrainyLayer = ({spec, timing}) => {
   const size = interpolate(big, [0, 1], [250, outro ? 420 : 470]);
   const left = interpolate(big, [0, 1], [40, 540 - size / 2]);
   const top = interpolate(big, [0, 1], [1120, outro ? 480 : 610]);
-  const words = timing.scenes.flatMap((s) => s.words);
-  const talking = words.some((w) => t >= w.s - 0.03 && t <= w.e + 0.03) ? 1 : 0;
-  const intro = spring({frame: f - 2, fps: FPS, config: {damping: 14}});
+  // mouth follows the real loudness of the voice track (per-frame envelope from run.mjs); fallback: word timings
+  let talking;
+  if (timing.amp && timing.amp.length) {
+    talking = timing.amp[Math.min(f, timing.amp.length - 1)] || 0;
+  } else {
+    const words = timing.scenes.flatMap((s) => s.words);
+    talking = words.some((w) => t >= w.s - 0.03 && t <= w.e + 0.03) ? 1 : 0;
+  }
+  const intro = spring({frame: f - (spec.hookText ? HOOK_FRAMES - 8 : 2), fps: FPS, config: {damping: 14}});
   return <Brainy size={size} talk={talking} emotion={spec.scenes[k]?.mood === 'wow' ? 'wow' : 'happy'}
     style={{left, top, scale: interpolate(intro, [0, 1], [0.6, 1]), opacity: interpolate(intro, [0, 0.4], [0, 1], clamp),
       translate: `0px ${Math.sin(f / 18) * (6 + big * 8)}px`, rotate: `${Math.sin(f / 30) * 3}deg`}} />;
@@ -90,7 +117,8 @@ export const Video = ({jobId, spec, timing}) => {
             const hit = st.words.find((w) => norm(w.w).includes(n) || (n.length > 3 && n.includes(norm(w.w)) && norm(w.w).length > 3));
             if (hit) at = Math.round(hit.s * FPS) - from;
           }
-          return exact ? at : Math.min(at, Math.round(FADE + (dur - FADE * 2) * Math.max(0.4, frac ?? 0)));
+          const capped = exact ? at : Math.min(at, Math.round(FADE + (dur - FADE * 2) * Math.max(0.4, frac ?? 0)));
+          return k === 0 && spec.hookText ? Math.max(capped, HOOK_FRAMES - from) : capped;
         };
         return (
           <Sequence key={k} from={from} durationInFrames={dur} name={`${k}:${scene.type}`}>
@@ -101,8 +129,10 @@ export const Video = ({jobId, spec, timing}) => {
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
+      <HookTitle text={spec.hookText} />
       <Captions timing={timing} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
+      {spec.hookText && <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />}
       {starts.slice(1).map((s, i) => (
         <Sequence key={`w${i}`} from={Math.max(0, s - 6)} durationInFrames={20} layout="none"><Audio src={staticFile('sfx/whoosh.wav')} volume={0.26} /></Sequence>
       ))}

@@ -18,6 +18,16 @@ export function tool(name, args, {allowFail = false} = {}) {
   return {out: r.stdout || '', err: r.stderr || '', status: r.status};
 }
 
+// decode any audio file to raw signed 16-bit mono PCM at the given sample rate
+export function pcmMono(file, rate) {
+  const args = ['-v', 'error', '-i', file, '-ac', '1', '-ar', String(rate), '-f', 's16le', '-'];
+  const r = SYSTEM
+    ? spawnSync('ffmpeg', args, {maxBuffer: 256 * 1024 * 1024, shell: isWin})
+    : spawnSync(npx, ['remotion', 'ffmpeg', ...args], {maxBuffer: 256 * 1024 * 1024, shell: isWin});
+  if (r.status !== 0) throw new Error('pcm decode failed');
+  return r.stdout;
+}
+
 export function duration(file) {
   const {out} = tool('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]);
   return parseFloat(out.trim());

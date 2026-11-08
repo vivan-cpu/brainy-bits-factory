@@ -6,11 +6,12 @@ Writes <out_dir>/words.json = {"engine": ..., "files": [...], "scenes": [[{w,s,e
 import asyncio, json, sys, os, re
 
 ENGINE = os.environ.get("BRAINY_TTS", "auto")
-EDGE_VOICE = os.environ.get("BRAINY_VOICE", "en-US-AndrewMultilingualNeural")
-EDGE_RATE = os.environ.get("BRAINY_RATE", "+6%")
+EDGE_VOICE = os.environ.get("BRAINY_VOICE", "en-US-ChristopherNeural")
+EDGE_RATE = os.environ.get("BRAINY_RATE", "+8%")
+EDGE_PITCH = os.environ.get("BRAINY_PITCH", "-3Hz")
 KOKORO_DIR = os.path.expanduser(os.environ.get("KOKORO_DIR", "~/kokoro"))
-KOKORO_VOICE = os.environ.get("KOKORO_VOICE", "am_michael")
-KOKORO_SPEED = float(os.environ.get("KOKORO_SPEED", "1.08"))
+KOKORO_VOICE = os.environ.get("KOKORO_VOICE", "am_onyx")
+KOKORO_SPEED = float(os.environ.get("KOKORO_SPEED", "1.1"))
 
 
 async def edge_scene(text, path, tries):
@@ -18,7 +19,7 @@ async def edge_scene(text, path, tries):
     for attempt in range(tries):
         try:
             words = []
-            c = edge_tts.Communicate(text, EDGE_VOICE, rate=EDGE_RATE, boundary="WordBoundary")
+            c = edge_tts.Communicate(text, EDGE_VOICE, rate=EDGE_RATE, pitch=EDGE_PITCH, boundary="WordBoundary")
             with open(path, "wb") as f:
                 async for ch in c.stream():
                     if ch["type"] == "audio":

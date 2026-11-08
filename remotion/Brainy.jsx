@@ -7,7 +7,8 @@ export const Brainy = ({size, talk = 0, emotion = 'happy', style}) => {
   const blink = f % 110 > 105 ? 0.1 : 1;
   const look = Math.sin(f / 45) * 1.5;
   const wow = emotion === 'wow';
-  const open = talk > 0 ? 0.25 + 0.75 * Math.abs(Math.sin(f * 0.55 + Math.sin(f * 0.21) * 2)) * talk : 0;
+  // talk = voice loudness 0..1 for this frame, so the mouth opens exactly when (and as wide as) the voice is loud
+  const open = talk > 0.08 ? Math.min(1, 0.15 + talk) : 0;
   return (
     <div style={{position: 'absolute', width: size, height: size, ...style}}>
       <div style={{position: 'absolute', inset: '-14%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,170,220,.38) 0%, rgba(255,170,220,0) 64%)'}} />
