@@ -8,7 +8,7 @@ export const Brainy = ({size, talk = 0, emotion = 'happy', style}) => {
   const look = Math.sin(f / 45) * 1.5;
   const wow = emotion === 'wow';
   // talk = voice loudness 0..1 for this frame, so the mouth opens exactly when (and as wide as) the voice is loud
-  const open = talk > 0.08 ? Math.min(1, 0.15 + talk) : 0;
+  const open = talk > 0.08 ? Math.min(1, 0.1 + talk * 0.9) : 0;
   return (
     <div style={{position: 'absolute', width: size, height: size, ...style}}>
       <div style={{position: 'absolute', inset: '-14%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,170,220,.38) 0%, rgba(255,170,220,0) 64%)'}} />
@@ -29,8 +29,11 @@ export const Brainy = ({size, talk = 0, emotion = 'happy', style}) => {
         ))}
         <ellipse cx="28" cy="66" rx="5" ry="2.8" fill="#ff8fb0" opacity=".7" />
         <ellipse cx="72" cy="66" rx="5" ry="2.8" fill="#ff8fb0" opacity=".7" />
-        {open > 0.02 || wow ? (
-          <ellipse cx="50" cy="70" rx={wow ? 4.5 : 5.5} ry={wow ? 5.5 : 1.2 + open * 5.5} fill="#5a1233" />
+        {open > 0.02 ? (
+          // talking: the voice loudness alone sets how wide the mouth opens (wow only changes brows/eyes)
+          <ellipse cx="50" cy="70" rx={4 + open * 2} ry={1 + open * 5} fill="#5a1233" />
+        ) : wow ? (
+          <ellipse cx="50" cy="70" rx="2.6" ry="3" fill="#5a1233" />
         ) : (
           <path d="M44 68 Q50 74 56 68" stroke="#7a1d45" strokeWidth="2.6" fill="none" strokeLinecap="round" />
         )}

@@ -19,7 +19,7 @@ HARD RULES
 - 5 to 7 scenes. Total narration 60 to 85 words (25 to 32 seconds spoken).
 - Scene 1 MUST be type "hook" and must stop the scroll in the first 2 seconds: ONE short, bold sentence (6-14 words) that states the most shocking part of the fact or asks a question the viewer can't ignore. Make it concrete and specific. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Good examples: "This animal can survive in space with no suit." / "Your body glows in the dark. You just can't see it." Up to 3 badges tease what's coming.
 - "hookText": 2-5 punchy words shown huge on screen in the first second (for example "IT SURVIVES IN SPACE"). No emojis.
-- Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part...").
+- Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part..."). The twist scene should be a compare, stat or orbit with a clear visual reveal, not a static row of icons.
 - Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match.
@@ -30,7 +30,7 @@ HARD RULES
 
 SCENE TYPES (fields)
 - hook: {type, narration, mood, items: [{emoji, at}] (1-3)}
-- trio: {type, narration, mood, items: [{emoji, label}] (1-3, label 1-3 words), pulse?: true for beating/throbbing things, dimAt?: word, dim?: [indexes of items that switch off/grey out at dimAt]}
+- trio: {type, narration, mood, items: [{emoji, label}] (1-3, label 1-3 words), pulse?: true for beating/throbbing things, dimAt?: word, dim?: [indexes of items that switch off/grey out at dimAt]}  (ONLY use dimAt/dim when the narration literally says something stops, dies, turns off or disappears. Never use it for emphasis.)
 - compare: {type, narration, mood, left: {emoji, big, label, at?}, right: {emoji, big, label, at?}, winner?: "left"|"right", revealAt?: word}  (big = short text like "Cu" or "90%", max 6 chars; label max 3 words)
 - stat: {type, narration, mood, emoji, value: number, prefix?: string, suffix?: string (e.g. " km/h", "%", "x"), label: 2-6 words, at?: word}
 - orbit: {type, narration, mood, center: emoji, around: emoji, count: 3-10, ring?: fraction 0-1 to fill a progress ring (e.g. 0.67 for two thirds), label?: 2-6 words, at?: word}
