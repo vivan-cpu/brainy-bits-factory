@@ -2,7 +2,7 @@ name: Brainy Bits factory
 
 on:
   schedule:
-    - cron: '30 0 * * *'   # every day 06:00 India time -> 5 Shorts
+    - cron: '30 0 * * *'   # every day 06:00 India time (GitHub can start it hours late) -> 3 Shorts
   workflow_dispatch:
     inputs:
       count:
@@ -57,7 +57,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PYTHON: python
-          COUNT: ${{ github.event.inputs.count || '5' }}
+          COUNT: ${{ github.event.inputs.count || '3' }}
           TOPIC: ${{ github.event.inputs.topic }}
           RENDER_CONCURRENCY: '100%'
           BRAINY_TTS: auto
@@ -80,8 +80,7 @@ jobs:
           gh release create "$TAG" out/*.mp4 --title "Brainy Bits $(date -u +'%d %b %Y %H:%M') UTC" --notes-file out/release-notes.md
 
       - name: Upload to YouTube (only when YouTube secrets are set)
-        # off by default: until Google's API audit passes, uploads are locked private and only burn the channel's daily upload limit.
-        # Turn on with repo variable YT_UPLOAD=1 once approved.
+        # Runs only when repo variable YT_UPLOAD=1. YT_PRIVACY sets the visibility, and YT_SCHEDULE=1 spaces the day's Shorts 3 hours apart.
         if: success() && env.HAS_YT == 'true' && vars.YT_UPLOAD == '1'
         env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}

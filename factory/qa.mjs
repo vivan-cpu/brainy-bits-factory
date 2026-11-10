@@ -9,6 +9,10 @@ export function checkSpec(spec, emojiSet) {
   const sc = spec.scenes || [];
   if (sc.length < 4 || sc.length > 8) problems.push(`scene count ${sc.length}`);
   if (sc[0]?.type !== 'hook') problems.push('first scene is not a hook');
+  if (!sc[0]?.items?.length) problems.push('hook needs at least one item: its first emoji fills the screen in the opening');
+  const NUMBER = /\d|\b(two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|hundred|thousand|million|billion|trillion|percent|times)\b/i;
+  if (NUMBER.test(spec.hookText || '')) problems.push('hookText gives away a number: it must tease without numbers');
+  if (NUMBER.test(sc[0]?.narration || '')) problems.push('hook narration gives away a number: it must tease and save the answer for scene 3 or later');
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);

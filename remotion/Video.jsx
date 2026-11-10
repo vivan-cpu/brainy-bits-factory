@@ -3,7 +3,7 @@ import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate,
 import {loadFont} from '@remotion/google-fonts/Montserrat';
 import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
-import {SCENES, FPS, FADE} from './Scenes.jsx';
+import {SCENES, FPS, FADE, Emoji, hookBadgePos} from './Scenes.jsx';
 
 const {fontFamily} = loadFont('normal', {weights: ['700', '800'], subsets: ['latin']});
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'};
@@ -13,18 +13,42 @@ const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 export const durationFor = (timing) => Math.ceil((timing.total + 0.7) * FPS);
 const HOOK_FRAMES = 48; // big hook title is on screen for the first ~1.6s
 
-// Slams a 2-5 word hook onto the screen in the first second, then gets out of the way
-const HookTitle = ({text}) => {
+const HERO = 700; // px, the subject's size during the opening
+const HERO_Y = 590;
+
+// First 1.6s: the subject already fills the screen and moves on frame one, with the teaser as the only text.
+// It then flies up and becomes the first badge of the hook scene, so Brainy never appears on top of it.
+const HookOpening = ({text, hero, badges}) => {
   const f = useCurrentFrame();
   if (!text || f > HOOK_FRAMES + 8) return null;
-  const p = spring({frame: f, fps: FPS, config: {damping: 9, stiffness: 220, mass: 0.7}});
-  const out = interpolate(f, [HOOK_FRAMES - 4, HOOK_FRAMES + 8], [1, 0], clamp);
+  const leave = interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 6], [0, 1], {...clamp, easing: ease});
+  const [bx, by] = hookBadgePos(badges);
+  const punch = interpolate(spring({frame: f, fps: FPS, config: {damping: 10, stiffness: 200, mass: 0.6}}), [0, 1], [1.22, 1]);
+  const push = interpolate(f, [0, HOOK_FRAMES], [1, 1.1], clamp);
+  const heroScale = punch * push * interpolate(leave, [0, 1], [1, 150 / HERO]);
+  const titleP = spring({frame: f, fps: FPS, config: {damping: 9, stiffness: 220, mass: 0.7}});
+  const titleOut = interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 2], [1, 0], clamp);
   const shake = f < 10 ? Math.sin(f * 2.2) * (10 - f) * 1.2 : 0;
+  const ring = interpolate(f, [0, 24], [0, 1], {...clamp, easing: ease});
   const words = String(text).toUpperCase().split(/\s+/);
   return (
-    <AbsoluteFill style={{alignItems: 'center', justifyContent: 'center', padding: '0 70px', opacity: out}}>
-      <div style={{textAlign: 'center', fontWeight: 800, fontSize: words.join(' ').length > 18 ? 118 : 140, lineHeight: 1.02, letterSpacing: -2,
-        color: '#fff', textShadow: '0 12px 40px rgba(0,0,0,.6)', scale: interpolate(p, [0, 1], [1.8, 1]), translate: `${shake}px 0px`, marginTop: -120}}>
+    <AbsoluteFill>
+      <div style={{position: 'absolute', left: 540 - 950, top: HERO_Y - 950, width: 1900, height: 1900, borderRadius: '50%', opacity: 1 - leave, rotate: `${f * 1.4}deg`,
+        background: 'repeating-conic-gradient(rgba(255,255,255,.17) 0deg 9deg, rgba(255,255,255,0) 9deg 24deg)',
+        maskImage: 'radial-gradient(circle, #000 18%, transparent 68%)', WebkitMaskImage: 'radial-gradient(circle, #000 18%, transparent 68%)'}} />
+      <div style={{position: 'absolute', left: 540 - 480, top: HERO_Y - 480, width: 960, height: 960, borderRadius: '50%', opacity: 1 - leave,
+        background: 'radial-gradient(circle, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 68%)'}} />
+      <div style={{position: 'absolute', left: 540 - 400, top: HERO_Y - 400, width: 800, height: 800, borderRadius: '50%', border: '10px solid rgba(255,255,255,.75)',
+        scale: interpolate(ring, [0, 1], [0.5, 1.5]), opacity: interpolate(ring, [0, 1], [0.9, 0])}} />
+      {hero && (
+        <div style={{position: 'absolute', width: HERO, height: HERO, left: interpolate(leave, [0, 1], [540, bx]) - HERO / 2, top: interpolate(leave, [0, 1], [HERO_Y, by]) - HERO / 2,
+          scale: heroScale, opacity: interpolate(leave, [0.85, 1], [1, 0], clamp),
+          translate: `0px ${Math.sin(f / 7) * 16 * (1 - leave)}px`, rotate: `${Math.sin(f / 5) * 5 * (1 - leave)}deg`}}>
+          <Emoji name={hero} size={HERO} />
+        </div>
+      )}
+      <div style={{position: 'absolute', left: 70, right: 70, top: 1090, textAlign: 'center', fontWeight: 800, fontSize: words.join(' ').length > 18 ? 118 : 140, lineHeight: 1.02, letterSpacing: -2,
+        color: '#fff', textShadow: '0 12px 40px rgba(0,0,0,.6)', opacity: titleOut, scale: interpolate(titleP, [0, 1], [1.25, 1]), translate: `${shake}px 0px`}}>
         {words.map((w, i) => (
           <span key={i} style={{color: i === words.length - 1 ? '#ffd54a' : '#fff', marginRight: 22, display: 'inline-block'}}>{w}</span>
         ))}
@@ -64,14 +88,15 @@ const BrainyLayer = ({spec, timing}) => {
     const words = timing.scenes.flatMap((s) => s.words);
     talking = words.some((w) => t >= w.s - 0.03 && t <= w.e + 0.03) ? 1 : 0;
   }
-  const intro = spring({frame: f - (spec.hookText ? HOOK_FRAMES - 8 : 2), fps: FPS, config: {damping: 14}});
+  const intro = spring({frame: f - (spec.hookText ? HOOK_FRAMES - 2 : 2), fps: FPS, config: {damping: 14}});
   return <Brainy size={size} talk={talking} emotion={spec.scenes[k]?.mood === 'wow' ? 'wow' : 'happy'}
     style={{left, top, scale: interpolate(intro, [0, 1], [0.6, 1]), opacity: interpolate(intro, [0, 0.4], [0, 1], clamp),
       translate: `0px ${Math.sin(f / 18) * (6 + big * 8)}px`, rotate: `${Math.sin(f / 30) * 3}deg`}} />;
 };
 
-const Captions = ({timing}) => {
+const Captions = ({timing, hideUntil = 0}) => {
   const f = useCurrentFrame();
+  if (f < hideUntil) return null; // only one piece of text on screen at a time
   const t = f / FPS;
   const chunks = [];
   timing.scenes.forEach((s) => { for (let i = 0; i < s.words.length; i += 3) chunks.push(s.words.slice(i, i + 3)); });
@@ -129,8 +154,8 @@ export const Video = ({jobId, spec, timing}) => {
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
-      <HookTitle text={spec.hookText} />
-      <Captions timing={timing} />
+      <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} badges={Math.min(spec.scenes[0]?.items?.length || 1, 3)} />
+      <Captions timing={timing} hideUntil={spec.hookText ? HOOK_FRAMES + 4 : 0} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
       {spec.hookText && <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />}
       {starts.slice(1).map((s, i) => (

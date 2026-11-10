@@ -22,15 +22,19 @@ const Label = ({text, x, y, w = 360, size = 46, color = '#fff', style}) => text 
     lineHeight: 1.1, textShadow: '0 6px 22px rgba(0,0,0,.5)', ...style}}>{text}</div>
 ) : null;
 
+const HOOK_BADGES = {1: [[540, 330]], 2: [[330, 360], [750, 360]], 3: [[220, 400], [540, 290], [860, 400]]};
+export const hookBadgePos = (count, i = 0) => HOOK_BADGES[count][i];
+
 // ---------- hook: badges arc above the big Brainy (Brainy itself is drawn by Video) ----------
 export const Hook = ({scene, cue}) => {
   const f = useCurrentFrame();
   const items = (scene.items || []).slice(0, 3);
-  const pos = items.length === 1 ? [[540, 330]] : items.length === 2 ? [[330, 360], [750, 360]] : [[220, 400], [540, 290], [860, 400]];
+  const pos = HOOK_BADGES[items.length] || [];
   return (
     <AbsoluteFill>
       {items.map((it, i) => {
-        const at = cue(it.at, 0.15 + i * 0.22);
+        // the first badge lands right as the opening's big subject flies into its place
+        const at = i === 0 ? cue(null, 0) : cue(it.at, 0.15 + i * 0.22);
         const p = pop(f, at);
         const [x, y] = pos[i];
         return (
