@@ -3,7 +3,7 @@ import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate,
 import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
 import {SCENES, FPS, FADE, Emoji, pop} from './Scenes.jsx';
-import {Captions, SceneWrap, makeCue, durationFor, fontFamily, HOOK_FRAMES} from './Video.jsx';
+import {Captions, SceneWrap, makeCue, durationFor, fontFor, HOOK_FRAMES} from './Video.jsx';
 
 // 16:9 long video. The Shorts scenes are reused as they are: their content zone (y 160..1110 of a 1080x1920 stage)
 // sits on the right, with Brainy and the captions on the left.
@@ -101,7 +101,7 @@ const Progress = ({spec, timing}) => {
 export const LongVideo = ({jobId, spec, timing}) => {
   const starts = timing.scenes.map((s) => Math.round(s.start * FPS));
   return (
-    <AbsoluteFill style={{fontFamily, background: '#04223f', overflow: 'hidden'}}>
+    <AbsoluteFill style={{fontFamily: fontFor(spec), background: '#04223f', overflow: 'hidden'}}>
       <WideWorld world={spec.world} sceneStarts={starts} />
       <div style={{position: 'absolute', left: STAGE_LEFT, top: STAGE_TOP, width: 1080, height: 1920,
         maskImage: 'linear-gradient(90deg, transparent 0, #000 70px)', WebkitMaskImage: 'linear-gradient(90deg, transparent 0, #000 70px)'}}>

@@ -116,6 +116,25 @@ ALLOWED EMOJI:
 ${emojiNames.join(', ')}`;
 }
 
+export const OUTRO = {
+  en: 'Like, share and subscribe to Brainy Bits for more weird facts!',
+  hi: 'ऐसे ही मज़ेदार फैक्ट्स के लिए ब्रेनी बिट्स को लाइक, शेयर और सब्सक्राइब करें!',
+};
+
+// Hindi channel: same rules, but everything the viewer hears or reads is in Hindi
+export function withLanguage(prompt, lang) {
+  if (lang !== 'hi') return prompt;
+  return `${prompt}
+
+LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a HINDI channel.
+- Every "narration", "hookText", "title", "description", "label", "big" text and chapter "title" is in natural, simple, spoken Hindi written in Devanagari script, the way a friendly Indian YouTuber talks. Common English words that Indians say in Hindi (science, planet, record, battery) are fine, written in Devanagari.
+- Write numbers in narration as Hindi words (for example "चालीस", "दो सौ"). On-screen "value" fields stay numbers.
+- The NO-NUMBERS rule for the hook still applies.
+- The outro narration must be exactly: "${OUTRO.hi}"
+- "tags" mix Hindi and English search words. "sources" stay in English.
+- "at", "dimAt" and "revealAt" must be one Hindi word copied exactly from that scene's narration.`;
+}
+
 export function factCheckPrompt(spec) {
   const lines = spec.scenes.map((s, i) => `${i + 1}. ${s.narration}${s.type === 'stat' ? ` [on screen: ${s.prefix || ''}${s.value}${s.suffix || ''} ${s.label || ''}]` : ''}${s.type === 'compare' ? ` [on screen: ${s.left?.big} ${s.left?.label} vs ${s.right?.big} ${s.right?.label}]` : ''}`).join('\n');
   return `You are a strict fact-checker for an educational YouTube Shorts channel. Check every factual claim in this script, including on-screen numbers.

@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {askJSON} from './gemini.mjs';
-import {CATEGORIES, STORY_CATEGORIES, scriptPrompt, longPrompt, factCheckPrompt} from './prompts.mjs';
+import {CATEGORIES, STORY_CATEGORIES, OUTRO, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
 import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
 
@@ -14,12 +14,14 @@ const TOPIC = arg('topic', '');
 const SKIP_FC = process.argv.includes('--skip-factcheck');
 const LONG = process.argv.includes('--long'); // 16:9 video of about 3-4 minutes instead of a Short
 const STORY_ONLY = process.argv.includes('--story'); // every Short in this run is a true story (for testing)
+const LANG = arg('lang', 'en'); // 'hi' = Hindi channel: Hindi script, voices, font and its own topic history
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'py' : 'python3');
 const PY_ARGS = process.env.PYTHON ? [] : (process.platform === 'win32' ? ['-3'] : []);
 
 const emojiNames = fs.readFileSync(path.join(ROOT, 'data/emoji-names.txt'), 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
 const emojiSet = new Set(emojiNames);
-const historyFile = path.join(ROOT, 'data/history.json');
+const historyFile = path.join(ROOT, LANG === 'en' ? 'data/history.json' : `data/history-${LANG}.json`);
+if (!fs.existsSync(historyFile)) fs.writeFileSync(historyFile, '[]');
 const history = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
 
@@ -52,9 +54,10 @@ function repairSpec(spec) {
     if (s.right) s.right.emoji = repairEmoji(s.right.emoji);
   }
   const last = spec.scenes[spec.scenes.length - 1];
-  if (last?.type === 'outro') last.narration = 'Like, share and subscribe to Brainy Bits for more weird facts!';
+  if (last?.type === 'outro') last.narration = OUTRO[LANG] || OUTRO.en;
+  spec.lang = LANG;
   if (!spec.hookText) spec.hookText = String(spec.title || '').split(/\s+/).slice(0, 4).join(' ');
-  spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{N}\s?!'%-]/gu, '').split(/\s+/).slice(0, 5).join(' ');
+  spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{M}\p{N}\s?!'%-]/gu, '').split(/\s+/).slice(0, 5).join(' ');
   if (!['ocean', 'space', 'body', 'lab', 'sky', 'forest'].includes(spec.world)) spec.world = 'lab';
   return spec;
 }
@@ -63,7 +66,7 @@ async function writeScript(category, topic, story = false) {
   const used = topic ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
   let feedback = '';
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const {model, json} = await askJSON((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story}));
+    const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story}), LANG));
     const spec = repairSpec(json);
     const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
@@ -82,9 +85,16 @@ const VOICES = [
   {BRAINY_VOICE: 'en-US-BrianMultilingualNeural', BRAINY_RATE: '+8%', BRAINY_PITCH: '-4Hz', KOKORO_VOICE: 'am_onyx'},
 ];
 
+// Hindi: Brian Multilingual keeps Brainy's English-channel voice; Madhur is a native Hindi voice. Kokoro Hindi voices as fallback.
+const VOICES_HI = [
+  {BRAINY_VOICE: 'en-US-BrianMultilingualNeural', BRAINY_RATE: '+6%', BRAINY_PITCH: '-4Hz', KOKORO_VOICE: 'hm_psi', KOKORO_LANG: 'hi'},
+  {BRAINY_VOICE: 'hi-IN-MadhurNeural', BRAINY_RATE: '+4%', BRAINY_PITCH: '-8Hz', KOKORO_VOICE: 'hm_omega', KOKORO_LANG: 'hi'},
+];
+
 function buildVoice(spec, id) {
   const jobDir = path.join(ROOT, 'jobs', id);
-  const voice0 = VOICES[history.length % VOICES.length];
+  const pool = LANG === 'hi' ? VOICES_HI : VOICES;
+  const voice0 = pool[history.length % pool.length];
   log(`  narrator: ${voice0.BRAINY_VOICE}`);
   run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir], {env: {...process.env, ...voice0}});
   const voice = JSON.parse(fs.readFileSync(path.join(jobDir, 'words.json'), 'utf8'));
@@ -143,7 +153,7 @@ async function makeOne(i) {
   const id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12) + (LONG ? '-long' : `-${i + 1}`);
   // in a daily run of 3+, the last Short is a true story; the others are facts (remakes of deleted videos go first)
   const story = !LONG && !(i === 0 && TOPIC) && (STORY_ONLY || (COUNT >= 3 && i === COUNT - 1));
-  const remake = !LONG && !story && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
+  const remake = LANG === 'en' && !LONG && !story && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
   const storyTheme = STORY_CATEGORIES[(day + i) % STORY_CATEGORIES.length];
   log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
   const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);

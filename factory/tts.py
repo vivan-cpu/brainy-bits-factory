@@ -44,7 +44,7 @@ def kokoro_scene(text, path):
     if _kokoro is None:
         from kokoro_onnx import Kokoro
         _kokoro = Kokoro(os.path.join(KOKORO_DIR, "kokoro-v1.0.onnx"), os.path.join(KOKORO_DIR, "voices-v1.0.bin"))
-    audio, sr = _kokoro.create(text, voice=KOKORO_VOICE, speed=KOKORO_SPEED, lang="en-us")
+    audio, sr = _kokoro.create(text, voice=KOKORO_VOICE, speed=KOKORO_SPEED, lang=os.environ.get("KOKORO_LANG", "en-us"))
     nz = np.where(np.abs(audio) > 0.01)[0]
     if len(nz):
         audio = audio[max(0, nz[0] - int(0.03 * sr)): nz[-1] + int(0.05 * sr)]

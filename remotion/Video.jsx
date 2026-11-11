@@ -1,6 +1,7 @@
 import React from 'react';
 import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate, spring, Easing} from 'remotion';
 import {loadFont} from '@remotion/google-fonts/Montserrat';
+import {loadFont as loadHindi} from '@remotion/google-fonts/Baloo2';
 import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
 import {SCENES, FPS, FADE, Emoji, hookBadgePos} from './Scenes.jsx';
@@ -8,7 +9,9 @@ import {SCENES, FPS, FADE, Emoji, hookBadgePos} from './Scenes.jsx';
 export const {fontFamily} = loadFont('normal', {weights: ['700', '800'], subsets: ['latin']});
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'};
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
-const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+const norm = (s) => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}\p{M}]/gu, ''); // keeps Devanagari letters and vowel signs
+const hindiFont = loadHindi('normal', {weights: ['700', '800'], subsets: ['devanagari', 'latin']}).fontFamily;
+export const fontFor = (spec) => (spec?.lang === 'hi' ? hindiFont : fontFamily);
 
 export const durationFor = (timing) => Math.ceil((timing.total + 0.7) * FPS);
 export const HOOK_FRAMES = 48; // big hook title is on screen for the first ~1.6s
@@ -137,7 +140,7 @@ export const Captions = ({timing, hideUntil = 0, box}) => {
 export const Video = ({jobId, spec, timing}) => {
   const starts = timing.scenes.map((s) => Math.round(s.start * FPS));
   return (
-    <AbsoluteFill style={{fontFamily, background: '#04223f'}}>
+    <AbsoluteFill style={{fontFamily: fontFor(spec), background: '#04223f'}}>
       <World world={spec.world} sceneStarts={starts} />
       {spec.scenes.map((scene, k) => {
         const Comp = SCENES[scene.type];
