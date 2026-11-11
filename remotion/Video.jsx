@@ -5,13 +5,27 @@ import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
 import {SCENES, FPS, FADE, Emoji, hookBadgePos} from './Scenes.jsx';
 
-const {fontFamily} = loadFont('normal', {weights: ['700', '800'], subsets: ['latin']});
+export const {fontFamily} = loadFont('normal', {weights: ['700', '800'], subsets: ['latin']});
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'};
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 export const durationFor = (timing) => Math.ceil((timing.total + 0.7) * FPS);
-const HOOK_FRAMES = 48; // big hook title is on screen for the first ~1.6s
+export const HOOK_FRAMES = 48; // big hook title is on screen for the first ~1.6s
+
+// cue(word, frac, exact): frame of a spoken word. Reveals are capped at 40% of the scene so the screen is never empty for long;
+// exact=true (state changes like dimAt/revealAt) keeps the true word time.
+export const makeCue = ({st, dur, from, minFrame}) => (word, frac, exact = false) => {
+  const fallback = Math.round(FADE + (dur - FADE * 2) * (frac ?? 0.2));
+  let at = fallback;
+  if (word) {
+    const n = norm(word);
+    const hit = st.words.find((w) => norm(w.w).includes(n) || (n.length > 3 && n.includes(norm(w.w)) && norm(w.w).length > 3));
+    if (hit) at = Math.round(hit.s * FPS) - from;
+  }
+  const capped = exact ? at : Math.min(at, Math.round(FADE + (dur - FADE * 2) * Math.max(0.4, frac ?? 0)));
+  return minFrame == null ? capped : Math.max(capped, minFrame);
+};
 
 const HERO = 700; // px, the subject's size during the opening
 const HERO_Y = 590;
@@ -57,7 +71,7 @@ const HookOpening = ({text, hero, badges}) => {
   );
 };
 
-const SceneWrap = ({dur, first, last, children}) => {
+export const SceneWrap = ({dur, first, last, children}) => {
   const f = useCurrentFrame();
   const a = first ? 1 : interpolate(f, [0, FADE * 2], [0, 1], clamp);
   const b = last ? 1 : interpolate(f, [dur - FADE * 2, dur], [1, 0], clamp);
@@ -94,7 +108,7 @@ const BrainyLayer = ({spec, timing}) => {
       translate: `0px ${Math.sin(f / 18) * (6 + big * 8)}px`, rotate: `${Math.sin(f / 30) * 3}deg`}} />;
 };
 
-const Captions = ({timing, hideUntil = 0}) => {
+export const Captions = ({timing, hideUntil = 0, box}) => {
   const f = useCurrentFrame();
   if (f < hideUntil) return null; // only one piece of text on screen at a time
   const t = f / FPS;
@@ -109,7 +123,7 @@ const Captions = ({timing, hideUntil = 0}) => {
   return (
     <div style={{position: 'absolute', left: 300, width: 730, top: 1140, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center',
       textAlign: 'center', fontWeight: 800, fontSize: 76, lineHeight: 1.12, color: '#fff', textShadow: '0 6px 28px rgba(0,0,0,.55)', opacity: op,
-      translate: `0px ${interpolate(enterF, [0, 6], [22, 0], {...clamp, easing: ease})}px`}}>
+      translate: `0px ${interpolate(enterF, [0, 6], [22, 0], {...clamp, easing: ease})}px`, ...box}}>
       <div style={{width: '100%', overflowWrap: 'break-word'}}>
         {c.map((w, j) => {
           const on = t >= w.s;
@@ -132,19 +146,7 @@ export const Video = ({jobId, spec, timing}) => {
         const from = Math.max(0, starts[k] - FADE);
         const end = k + 1 < starts.length ? starts[k + 1] : durationFor(timing);
         const dur = end + FADE - from;
-        // cue(word, frac, exact): frame of a spoken word. Reveals are capped at 40% of the scene so the screen is never empty for long;
-        // exact=true (state changes like dimAt/revealAt) keeps the true word time.
-        const cue = (word, frac, exact = false) => {
-          const fallback = Math.round(FADE + (dur - FADE * 2) * (frac ?? 0.2));
-          let at = fallback;
-          if (word) {
-            const n = norm(word);
-            const hit = st.words.find((w) => norm(w.w).includes(n) || (n.length > 3 && n.includes(norm(w.w)) && norm(w.w).length > 3));
-            if (hit) at = Math.round(hit.s * FPS) - from;
-          }
-          const capped = exact ? at : Math.min(at, Math.round(FADE + (dur - FADE * 2) * Math.max(0.4, frac ?? 0)));
-          return k === 0 && spec.hookText ? Math.max(capped, HOOK_FRAMES - from) : capped;
-        };
+        const cue = makeCue({st, dur, from, minFrame: k === 0 && spec.hookText ? HOOK_FRAMES - from : null});
         return (
           <Sequence key={k} from={from} durationInFrames={dur} name={`${k}:${scene.type}`}>
             <SceneWrap dur={dur} first={k === 0} last={k === spec.scenes.length - 1}>

@@ -5,6 +5,58 @@ export const CATEGORIES = [
 
 const WORLDS = 'ocean (sea, water animals), space (planets, stars), body (human body, health), lab (science, tech, chemistry, history), sky (weather, birds, flight), forest (land animals, plants, insects, nature)';
 
+const SCENE_TYPES = `SCENE TYPES (fields)
+- hook: {type, narration, mood, items: [{emoji, at}] (1-3)}
+- trio: {type, narration, mood, items: [{emoji, label}] (1-3, label 1-3 words), pulse?: true for beating/throbbing things, dimAt?: word, dim?: [indexes of items that switch off/grey out at dimAt]}  (ONLY use dimAt/dim when the narration literally says something stops, dies, turns off or disappears. Never use it for emphasis.)
+- compare: {type, narration, mood, left: {emoji, big, label, at?}, right: {emoji, big, label, at?}, winner?: "left"|"right", revealAt?: word}  (big = short text like "Cu" or "90%", max 6 chars; label max 3 words)
+- stat: {type, narration, mood, emoji, value: number, prefix?: string, suffix?: string (e.g. " km/h", "%", "x"), label: 2-6 words, at?: word}
+- orbit: {type, narration, mood, center: emoji, around: emoji, count: 3-10, ring?: fraction 0-1 to fill a progress ring (e.g. 0.67 for two thirds), label?: 2-6 words, at?: word}
+- journey: {type, narration, mood, actor: emoji, props: [emoji, emoji] (ground scenery), flyer?: emoji passing in the background}
+- outro: {type, narration, mood}`;
+
+export function longPrompt({category, used, emojiNames, feedback}) {
+  return `You write scripts for "Brainy Bits", a YouTube channel where Brainy, a cute cartoon brain mascot, explains true, surprising facts. This script is for a 3 to 4 minute landscape video: six surprising facts on one theme, ordered so the most surprising fact comes last. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
+
+TASK: Pick ONE specific, interesting theme in the category "${category}".
+${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
+${feedback ? `The previous draft was rejected for these reasons, fix them or pick a different theme: ${feedback}` : ''}
+
+HARD RULES
+- Facts must be accurate and supported by mainstream sources (NASA, Britannica, National Geographic, Smithsonian, peer-reviewed science). No myths, no rounded-up exaggerations, hedge with "about"/"up to" when values vary. Avoid contested records and superlatives unless certain. Use metric units exactly as spoken.
+- Total narration 460 to 640 words across every scene.
+- Scene 1 MUST be type "hook": ONE short, bold sentence (6-14 words) that teases the whole video. It must NOT give any answer and must contain no numbers. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Its first item is shown huge from the first frame, so it must be the most literal emoji of the theme.
+- "hookText": 2-5 punchy words shown huge in the first second. It teases, contains no number and no emojis.
+- Scene 2 is a trio promising what is coming, in 15-25 words, without revealing any fact.
+- Then exactly 6 facts. Each fact starts with one scene of type "chapter", numbered 1 to 6 in order. Its narration (5-12 words) teases that fact without answering it.
+- After each chapter come 3 or 4 scenes of types trio, compare, stat, orbit or journey, using at least 2 different types per fact. Each scene's narration is 1-2 spoken sentences (14-32 words) and the visual must match what is being said. Reveal the answer in the second scene of the fact, not in the chapter.
+- Vary the wording between facts, and link each fact to the next with a short tease at the end of its last scene.
+- Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
+- Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match.
+- Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
+- Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
+- world: one of ${WORLDS}.
+- mood per scene: "wow" for the most surprising moments, otherwise "happy".
+
+${SCENE_TYPES}
+- chapter: {type, narration, mood, number: 1-6, title: 2-6 words naming the fact without answering it, emoji}
+
+OUTPUT exactly one JSON object:
+{
+ "topic": "short theme name",
+ "hookText": "2-5 WORD HOOK",
+ "category": "${category}",
+ "world": "...",
+ "title": "curious YouTube title, max 70 characters, no emojis, literally true and fully delivered by the video",
+ "description": "3 short sentences that add context + 3 to 5 hashtags. Do not use #shorts.",
+ "tags": ["8 to 12 search tags"],
+ "sources": ["3 to 6 credible sources supporting the main facts"],
+ "scenes": [ ... ]
+}
+
+ALLOWED EMOJI:
+${emojiNames.join(', ')}`;
+}
+
 export function scriptPrompt({category, topic, used, emojiNames, feedback}) {
   return `You write scripts for "Brainy Bits", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
@@ -30,14 +82,7 @@ HARD RULES
 - world: one of ${WORLDS}.
 - mood per scene: "wow" for the most surprising moments, otherwise "happy".
 
-SCENE TYPES (fields)
-- hook: {type, narration, mood, items: [{emoji, at}] (1-3)}
-- trio: {type, narration, mood, items: [{emoji, label}] (1-3, label 1-3 words), pulse?: true for beating/throbbing things, dimAt?: word, dim?: [indexes of items that switch off/grey out at dimAt]}  (ONLY use dimAt/dim when the narration literally says something stops, dies, turns off or disappears. Never use it for emphasis.)
-- compare: {type, narration, mood, left: {emoji, big, label, at?}, right: {emoji, big, label, at?}, winner?: "left"|"right", revealAt?: word}  (big = short text like "Cu" or "90%", max 6 chars; label max 3 words)
-- stat: {type, narration, mood, emoji, value: number, prefix?: string, suffix?: string (e.g. " km/h", "%", "x"), label: 2-6 words, at?: word}
-- orbit: {type, narration, mood, center: emoji, around: emoji, count: 3-10, ring?: fraction 0-1 to fill a progress ring (e.g. 0.67 for two thirds), label?: 2-6 words, at?: word}
-- journey: {type, narration, mood, actor: emoji, props: [emoji, emoji] (ground scenery), flyer?: emoji passing in the background}
-- outro: {type, narration, mood}
+${SCENE_TYPES}
 
 OUTPUT exactly one JSON object:
 {

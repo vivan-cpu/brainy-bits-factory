@@ -3,8 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {askJSON} from './gemini.mjs';
-import {CATEGORIES, scriptPrompt, factCheckPrompt} from './prompts.mjs';
-import {checkSpec, checkVideo, collectEmojis} from './qa.mjs';
+import {CATEGORIES, scriptPrompt, longPrompt, factCheckPrompt} from './prompts.mjs';
+import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
@@ -12,6 +12,7 @@ const arg = (name, def) => { const i = process.argv.indexOf(`--${name}`); return
 const COUNT = parseInt(arg('count', '1'), 10);
 const TOPIC = arg('topic', '');
 const SKIP_FC = process.argv.includes('--skip-factcheck');
+const LONG = process.argv.includes('--long'); // 16:9 video of about 3-4 minutes instead of a Short
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'py' : 'python3');
 const PY_ARGS = process.env.PYTHON ? [] : (process.platform === 'win32' ? ['-3'] : []);
 
@@ -20,6 +21,12 @@ const emojiSet = new Set(emojiNames);
 const historyFile = path.join(ROOT, 'data/history.json');
 const history = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
 const log = (...a) => console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
+
+// Deleted private videos waiting to be remade in the current style: these go ahead of newly picked topics
+const refurbFile = path.join(ROOT, 'data/refurbish.json');
+const refurb = fs.existsSync(refurbFile) ? JSON.parse(fs.readFileSync(refurbFile, 'utf8')) : {videos: []};
+const refurbQueue = refurb.videos.filter((v) => !v.made);
+const refurbTopic = (v) => `${v.title}. What the earlier version covered: ${v.description.replace(/#\w+/g, '').trim()}${v.duplicateOfPublic ? ` A public video titled "${v.title}" already exists, so take a fresh angle and use a different title.` : ''}`;
 
 // map an unknown emoji to the closest allowed one (shared words), else a safe default
 function repairEmoji(name) {
@@ -52,12 +59,12 @@ function repairSpec(spec) {
 }
 
 async function writeScript(category, topic) {
-  const used = history.map((h) => h.topic);
+  const used = topic ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
   let feedback = '';
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const {model, json} = await askJSON(scriptPrompt({category, topic, used, emojiNames, feedback}));
+    const {model, json} = await askJSON((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback}));
     const spec = repairSpec(json);
-    const problems = checkSpec(spec, emojiSet);
+    const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
     if (SKIP_FC) return spec;
     const {json: fc} = await askJSON(factCheckPrompt(spec), {temperature: 0.1});
@@ -125,16 +132,17 @@ function render(spec, timing, id) {
   const propsFile = path.join(ROOT, 'jobs', id, 'props.json');
   fs.writeFileSync(propsFile, JSON.stringify({jobId: id, spec, timing}));
   const outFile = path.join(ROOT, 'out', `${id}.mp4`);
-  run(npx, ['remotion', 'render', 'remotion/index.jsx', 'Brainy', outFile, `--props=${propsFile}`, '--log=error', `--concurrency=${process.env.RENDER_CONCURRENCY || '50%'}`], {cwd: ROOT});
+  run(npx, ['remotion', 'render', 'remotion/index.jsx', LONG ? 'BrainyLong' : 'Brainy', outFile, `--props=${propsFile}`, '--log=error', `--concurrency=${process.env.RENDER_CONCURRENCY || '50%'}`], {cwd: ROOT});
   return outFile;
 }
 
 async function makeOne(i) {
   const day = Math.floor(Date.now() / 86400000);
-  const category = CATEGORIES[(day * 5 + i) % CATEGORIES.length];
-  const id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12) + `-${i + 1}`;
-  log(`video ${i + 1}/${COUNT}: category "${TOPIC || category}" (job ${id})`);
-  const spec = await writeScript(category, i === 0 ? TOPIC : '');
+  const category = CATEGORIES[(day * 5 + i + (LONG ? 7 : 0)) % CATEGORIES.length];
+  const id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12) + (LONG ? '-long' : `-${i + 1}`);
+  const remake = !LONG && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
+  log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : `category "${TOPIC || category}"`} (job ${id})`);
+  const spec = await writeScript(remake?.category || category, remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''));
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
   fs.writeFileSync(path.join(ROOT, 'jobs', id, 'spec.json'), JSON.stringify(spec, null, 1));
   log('  voice…');
@@ -142,7 +150,7 @@ async function makeOne(i) {
   for (let attempt = 1; attempt <= 2; attempt++) {
     log(`  render (attempt ${attempt})…`);
     const file = render(spec, timing, id);
-    const qa = checkVideo(file);
+    const qa = checkVideo(file, LONG ? {min: 120, max: 360, width: 1920, height: 1080} : undefined);
     if (!qa.problems.length) {
       log(`  QA passed: ${qa.duration.toFixed(1)}s, ${qa.meanVolume} dB`);
       const meta = {id, file: path.basename(file), title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
@@ -150,6 +158,7 @@ async function makeOne(i) {
       fs.writeFileSync(path.join(ROOT, 'out', `${id}.json`), JSON.stringify(meta, null, 1));
       history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category});
       fs.writeFileSync(historyFile, JSON.stringify(history, null, 1));
+      if (remake) { remake.made = true; fs.writeFileSync(refurbFile, JSON.stringify(refurb, null, 1)); }
       return meta;
     }
     log(`  QA failed: ${qa.problems.join('; ')}`);
@@ -163,8 +172,12 @@ for (let i = 0; i < COUNT; i++) {
   try { made.push(await makeOne(i)); }
   catch (e) { log(`  ✗ video ${i + 1} skipped: ${e.message}`); }
 }
-fs.writeFileSync(path.join(ROOT, 'out', 'manifest.json'), JSON.stringify(made, null, 1));
-const notes = made.map((m, n) => `### ${n + 1}. ${m.title}\n**File:** ${m.file} (${m.duration.toFixed(0)}s)\n\n**Title:**\n\`\`\`\n${m.title}\n\`\`\`\n**Description:**\n\`\`\`\n${m.description}\n\`\`\`\n**Tags:** ${m.tags.join(', ')}\n\n**Sources:** ${m.sources.join('; ')}\n`).join('\n---\n\n');
+// the long video runs after the Shorts in the same job, so it adds to their manifest instead of replacing it
+const manifestFile = path.join(ROOT, 'out', 'manifest.json');
+const earlier = LONG && fs.existsSync(manifestFile) ? JSON.parse(fs.readFileSync(manifestFile, 'utf8')) : [];
+const all = [...earlier, ...made];
+fs.writeFileSync(manifestFile, JSON.stringify(all, null, 1));
+const notes = all.map((m, n) => `### ${n + 1}. ${m.title}\n**File:** ${m.file} (${m.duration.toFixed(0)}s)\n\n**Title:**\n\`\`\`\n${m.title}\n\`\`\`\n**Description:**\n\`\`\`\n${m.description}\n\`\`\`\n**Tags:** ${m.tags.join(', ')}\n\n**Sources:** ${m.sources.join('; ')}\n`).join('\n---\n\n');
 fs.writeFileSync(path.join(ROOT, 'out', 'release-notes.md'), notes || 'No videos passed QA this run.');
 log(`done: ${made.length}/${COUNT} videos`);
 if (!made.length) process.exit(1);
