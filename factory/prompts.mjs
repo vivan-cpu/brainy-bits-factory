@@ -31,7 +31,7 @@ HARD RULES
 - After each chapter come 3 or 4 scenes of types trio, compare, stat, orbit or journey, using at least 2 different types per fact. Each scene's narration is 1-2 spoken sentences (14-32 words) and the visual must match what is being said. Reveal the answer in the second scene of the fact, not in the chapter.
 - Vary the wording between facts, and link each fact to the next with a short tease at the end of its last scene.
 - Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
-- Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match.
+- Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
 - Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
 - world: one of ${WORLDS}.
@@ -57,10 +57,25 @@ ALLOWED EMOJI:
 ${emojiNames.join(', ')}`;
 }
 
-export function scriptPrompt({category, topic, used, emojiNames, feedback}) {
+// themes for the daily true-story Short
+export const STORY_CATEGORIES = [
+  'weird history', 'survival against the odds', 'heroic and clever animals', 'accidental inventions and discoveries',
+  'space missions', 'unbelievable coincidences', 'ocean and shipwreck mysteries', 'record-breaking journeys',
+];
+
+export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false}) {
   return `You write scripts for "Brainy Bits", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
-TASK: ${topic ? `Write a script about: "${topic}".` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
+TASK: ${topic ? `Write a script about: "${topic}".` : story ? `Tell ONE gripping, TRUE, well-documented story in the theme "${category}": a real event, person or animal with a clear beginning, a problem, a turning point and a surprising ending.` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
+${story ? `STORY RULES (this video is a true story, not a list of facts)
+- Follow one main character (a named person, animal, ship or place) through the event, in time order.
+- Every scene must make the viewer want the next one: end scenes on a question, a danger or a "but".
+- The ending is the payoff: the surprising outcome or twist lands in the last scene before the outro.
+- Stick to what reliable sources say happened. Never invent dialogue, names, numbers or details. If something is uncertain, say "historians think" or "reportedly".
+- Use journey scenes for travel or chases and compare or stat scenes for the turning point, so the story keeps moving on screen.
+- Only use a stat scene for a real, meaningful number from the sources (a weight, a distance, a year count), never a filler number like 1.
+- Legends that grew around the story (for example "he never dropped a single shell") must be told as legends ("soldiers said...") or left out.
+` : ''}
 ${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
 ${feedback ? `A fact-checker rejected the previous draft for these reasons, fix them or pick a different topic: ${feedback}` : ''}
 
@@ -68,7 +83,7 @@ HARD RULES
 - Facts must be accurate and supported by mainstream sources (NASA, Britannica, National Geographic, Smithsonian, peer-reviewed science). No myths, no rounded-up exaggerations, hedge with "about"/"up to" when values vary.
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
 - The title must be literally true and fully delivered by the script.
-- 5 to 7 scenes. Total narration 60 to 85 words (25 to 32 seconds spoken).
+- ${story ? '6 to 8 scenes. Total narration 80 to 110 words (35 to 45 seconds spoken).' : '5 to 7 scenes. Total narration 60 to 85 words (25 to 32 seconds spoken).'}
 - Scene 1 MUST be type "hook" and must stop the scroll in the first 2 seconds: ONE short, bold sentence (6-14 words) that TEASES the fact and makes the viewer need the answer. It must NOT give the answer: no numbers, no measurements and no statement of the main fact. Make it concrete and specific. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (gives it away): "A sloth can hold its breath four times longer than a dolphin." Good (teases): "This sleepy animal beats a dolphin at one thing." / "Astronauts left something on the Moon that won't go away." Only the first item in the hook is required; up to 3 badges tease what's coming, and they must not reveal the answer either.
 - The FIRST item of the hook scene is shown huge on screen from the very first frame. It must be the most literal emoji of the main subject (the animal, object or body part the video is about).
 - "hookText": 2-5 punchy words shown huge on screen in the first second, and the only text on screen at that moment. It must tease, not answer, and must not contain a number (for example "IT BEATS A DOLPHIN" or "IT NEVER GOES AWAY"). No emojis.
@@ -76,7 +91,7 @@ HARD RULES
 - Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part..."). The twist scene should be a compare, stat or orbit with a clear visual reveal, not a static row of icons.
 - Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
-- Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match.
+- Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
 - Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
 - world: one of ${WORLDS}.
@@ -109,7 +124,7 @@ Script:
 ${lines}
 Title: ${spec.title}
 
-Reject ONLY for real problems: a claim that is false, a popular myth, a clearly wrong number, or a title that is false. Do NOT reject for harmless vivid wording, rounding within normal ranges, unit naming (tons vs tonnes), or simplification for a general audience.
+Reject ONLY for real problems: a claim that is false, a popular myth, a clearly wrong number, a title that is false, or (in a story) an unverifiable legend or invented detail stated as certain fact. Do NOT reject for harmless vivid wording, rounding within normal ranges, unit naming (tons vs tonnes), or simplification for a general audience.
 
 Return JSON: {"ok": true|false, "problems": ["each problem in one sentence"], "confidence": 0-1}`;
 }

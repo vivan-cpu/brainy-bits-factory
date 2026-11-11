@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {askJSON} from './gemini.mjs';
-import {CATEGORIES, scriptPrompt, longPrompt, factCheckPrompt} from './prompts.mjs';
+import {CATEGORIES, STORY_CATEGORIES, scriptPrompt, longPrompt, factCheckPrompt} from './prompts.mjs';
 import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
 
@@ -13,6 +13,7 @@ const COUNT = parseInt(arg('count', '1'), 10);
 const TOPIC = arg('topic', '');
 const SKIP_FC = process.argv.includes('--skip-factcheck');
 const LONG = process.argv.includes('--long'); // 16:9 video of about 3-4 minutes instead of a Short
+const STORY_ONLY = process.argv.includes('--story'); // every Short in this run is a true story (for testing)
 const PY = process.env.PYTHON || (process.platform === 'win32' ? 'py' : 'python3');
 const PY_ARGS = process.env.PYTHON ? [] : (process.platform === 'win32' ? ['-3'] : []);
 
@@ -58,11 +59,11 @@ function repairSpec(spec) {
   return spec;
 }
 
-async function writeScript(category, topic) {
+async function writeScript(category, topic, story = false) {
   const used = topic ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
   let feedback = '';
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const {model, json} = await askJSON((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback}));
+    const {model, json} = await askJSON((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story}));
     const spec = repairSpec(json);
     const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
@@ -140,9 +141,12 @@ async function makeOne(i) {
   const day = Math.floor(Date.now() / 86400000);
   const category = CATEGORIES[(day * 5 + i + (LONG ? 7 : 0)) % CATEGORIES.length];
   const id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12) + (LONG ? '-long' : `-${i + 1}`);
-  const remake = !LONG && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
-  log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : `category "${TOPIC || category}"`} (job ${id})`);
-  const spec = await writeScript(remake?.category || category, remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''));
+  // in a daily run of 3+, the last Short is a true story; the others are facts (remakes of deleted videos go first)
+  const story = !LONG && !(i === 0 && TOPIC) && (STORY_ONLY || (COUNT >= 3 && i === COUNT - 1));
+  const remake = !LONG && !story && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
+  const storyTheme = STORY_CATEGORIES[(day + i) % STORY_CATEGORIES.length];
+  log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
+  const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
   fs.writeFileSync(path.join(ROOT, 'jobs', id, 'spec.json'), JSON.stringify(spec, null, 1));
   log('  voice…');
