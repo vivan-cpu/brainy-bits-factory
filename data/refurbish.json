@@ -2,74 +2,144 @@
  "note": "Private videos deleted from YouTube on 2026-11-10, kept so they can be remade in the current style. Unique topics come first. The last 4 duplicate Shorts that are already public, so those need a fresh angle and a different title. The original mp4s are still in the GitHub Releases.",
  "videos": [
   {
-   "deletedId": "fz3IegmZhZU", "duplicateOfPublic": false, "made": false,
-   "topic": "Octopus Hearts and Blood", "category": "ocean life",
+   "deletedId": "fz3IegmZhZU",
+   "duplicateOfPublic": false,
+   "made": true,
+   "topic": "Octopus Hearts and Blood",
+   "category": "ocean life",
    "title": "Why an Octopus Has Blue Blood and 3 Hearts",
    "description": "Octopuses have three hearts and copper-rich blue blood that helps them survive in cold waters. When they swim, their main heart actually takes a break! #shorts #oceanlife #wildlife #sciencefacts",
-   "sources": ["Smithsonian Ocean", "National Geographic", "Natural History Museum London"]
+   "sources": [
+    "Smithsonian Ocean",
+    "National Geographic",
+    "Natural History Museum London"
+   ]
   },
   {
-   "deletedId": "qBkhnUyO1LY", "duplicateOfPublic": false, "made": false,
-   "topic": "weight of a cloud", "category": "earth and nature",
+   "deletedId": "qBkhnUyO1LY",
+   "duplicateOfPublic": false,
+   "made": true,
+   "topic": "weight of a cloud",
+   "category": "earth and nature",
    "title": "How Much Does a Fluffy Cloud Actually Weigh?",
    "description": "You might think clouds are light as a feather, but an average cumulus cloud weighs as much as one hundred elephants! Learn how tons of water droplets stay afloat in the sky. #shorts #science #clouds #nature #facts",
-   "sources": ["USGS Water Science School", "NOAA National Weather Service"]
+   "sources": [
+    "USGS Water Science School",
+    "NOAA National Weather Service"
+   ]
   },
   {
-   "deletedId": "YUTjT135eRw", "duplicateOfPublic": false, "made": false,
-   "topic": "Lightning Temperature", "category": "science",
+   "deletedId": "YUTjT135eRw",
+   "duplicateOfPublic": false,
+   "made": false,
+   "topic": "Lightning Temperature",
+   "category": "science",
    "title": "Lightning Is 5 Times Hotter Than the Sun",
    "description": "A single bolt of lightning can reach thirty thousand degrees Celsius, making it five times hotter than the surface of the Sun. That extreme heat causes the air to violently expand into a sonic boom of thunder! #shorts #science #weather #nature #space",
-   "sources": ["NOAA National Severe Storms Laboratory", "NASA Solar Physics", "National Geographic"]
+   "sources": [
+    "NOAA National Severe Storms Laboratory",
+    "NASA Solar Physics",
+    "National Geographic"
+   ]
   },
   {
-   "deletedId": "qHzBJGm0Zio", "duplicateOfPublic": false, "made": false,
-   "topic": "red blood cell production rate", "category": "human body",
+   "deletedId": "qHzBJGm0Zio",
+   "duplicateOfPublic": false,
+   "made": false,
+   "topic": "red blood cell production rate",
+   "category": "human body",
    "title": "Your Body Makes 2 Million New Blood Cells Every Second",
    "description": "Your bone marrow works around the clock to create millions of new red blood cells every second. Discover how your body keeps oxygen flowing continuously! #shorts #humanbody #science #biology #facts",
-   "sources": ["National Institutes of Health (NIH)", "Britannica", "National Geographic"]
+   "sources": [
+    "National Institutes of Health (NIH)",
+    "Britannica",
+    "National Geographic"
+   ]
   },
   {
-   "deletedId": "voqMCsY7gGs", "duplicateOfPublic": false, "made": false,
-   "topic": "Mass of the Sun", "category": "space",
+   "deletedId": "voqMCsY7gGs",
+   "duplicateOfPublic": false,
+   "made": false,
+   "topic": "Mass of the Sun",
+   "category": "space",
    "title": "The Sun Holds 99.8 Percent of All Solar System Mass",
    "description": "The Sun dominates our solar system by holding nearly all of its total mass. Discover how small all the planets are in comparison! #space #astronomy #science #facts #shorts",
-   "sources": ["NASA Solar System Exploration", "Smithsonian National Air and Space Museum"]
+   "sources": [
+    "NASA Solar System Exploration",
+    "Smithsonian National Air and Space Museum"
+   ]
   },
   {
-   "deletedId": "0u47_y36bRI", "duplicateOfPublic": false, "made": false,
-   "topic": "Dinosaur Timeline", "category": "dinosaurs and fossils",
+   "deletedId": "0u47_y36bRI",
+   "duplicateOfPublic": false,
+   "made": false,
+   "topic": "Dinosaur Timeline",
+   "category": "dinosaurs and fossils",
    "title": "The T-Rex lived closer to us than to Stegosaurus",
    "description": "The timeline of the dinosaurs is much longer than you think! Learn why some famous species never actually met. #shorts #dinosaurs #science #history",
-   "sources": ["Smithsonian Institution", "National Geographic"]
+   "sources": [
+    "Smithsonian Institution",
+    "National Geographic"
+   ]
   },
   {
-   "deletedId": "dXEh3FDfWbE", "duplicateOfPublic": true, "publicId": "tOgJaxN-uRc", "made": false,
-   "topic": "sharks versus trees", "category": "earth and nature",
+   "deletedId": "dXEh3FDfWbE",
+   "duplicateOfPublic": true,
+   "publicId": "tOgJaxN-uRc",
+   "made": false,
+   "topic": "sharks versus trees",
+   "category": "earth and nature",
    "title": "Sharks are older than trees",
    "description": "Sharks have been swimming in our oceans for hundreds of millions of years, predating trees and even Saturn's rings! Discover how these ancient survivors conquered time. #shorts #nature #sharks #science #ocean",
-   "sources": ["Smithsonian Institution", "Natural History Museum", "NASA"]
+   "sources": [
+    "Smithsonian Institution",
+    "Natural History Museum",
+    "NASA"
+   ]
   },
   {
-   "deletedId": "2UnTY1H9yBo", "duplicateOfPublic": true, "publicId": "A-Pq0PftxxU", "made": false,
-   "topic": "Stomach acid power", "category": "science",
+   "deletedId": "2UnTY1H9yBo",
+   "duplicateOfPublic": true,
+   "publicId": "A-Pq0PftxxU",
+   "made": false,
+   "topic": "Stomach acid power",
+   "category": "science",
    "title": "Your stomach acid can dissolve metal",
    "description": "The human body is full of surprises! Learn how your stomach handles acid strong enough to dissolve some metals. #shorts #science #biology",
-   "sources": ["Scientific American", "Britannica", "Healthline"]
+   "sources": [
+    "Scientific American",
+    "Britannica",
+    "Healthline"
+   ]
   },
   {
-   "deletedId": "XuaqVyyr4hY", "duplicateOfPublic": true, "publicId": "tGxWzU5orGE", "made": false,
-   "topic": "vanishing bones", "category": "human body",
+   "deletedId": "XuaqVyyr4hY",
+   "duplicateOfPublic": true,
+   "publicId": "tGxWzU5orGE",
+   "made": false,
+   "topic": "vanishing bones",
+   "category": "human body",
    "title": "Why do babies have more bones than adults",
    "description": "Humans start life with around 300 bones but end up with only 206. Discover how your skeleton fuses together as you grow! #shorts #humanbody #science #biology #skeleton",
-   "sources": ["Britannica", "National Geographic", "KidsHealth from Nemours"]
+   "sources": [
+    "Britannica",
+    "National Geographic",
+    "KidsHealth from Nemours"
+   ]
   },
   {
-   "deletedId": "KPdk2YSkwtE", "duplicateOfPublic": true, "publicId": "FOS_wFGaAVM", "made": false,
-   "topic": "Moon Footprint Longevity", "category": "space",
+   "deletedId": "KPdk2YSkwtE",
+   "duplicateOfPublic": true,
+   "publicId": "FOS_wFGaAVM",
+   "made": false,
+   "topic": "Moon Footprint Longevity",
+   "category": "space",
    "title": "These footprints will last for millions of years",
    "description": "Discover why the astronaut footprints on the moon are still there today. Without wind or water, the lunar surface is a frozen moment in history! #shorts #space #nasa #science #moon",
-   "sources": ["NASA", "Smithsonian National Air and Space Museum"]
+   "sources": [
+    "NASA",
+    "Smithsonian National Air and Space Museum"
+   ]
   }
  ]
 }
