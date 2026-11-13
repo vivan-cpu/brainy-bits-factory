@@ -74,7 +74,7 @@ function repairEmoji(name) {
 
 function repairSpec(spec) {
   for (const s of spec.scenes) {
-    (s.items || []).forEach((it) => (it.emoji = repairEmoji(it.emoji)));
+    [...(s.items || []), ...(s.bars || []), ...(s.steps || [])].forEach((it) => (it.emoji = repairEmoji(it.emoji)));
     ['emoji', 'center', 'around', 'actor', 'flyer'].forEach((k) => { if (s[k]) s[k] = repairEmoji(s[k]); });
     if (s.props) s.props = s.props.map(repairEmoji);
     if (s.left) s.left.emoji = repairEmoji(s.left.emoji);

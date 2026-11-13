@@ -2,7 +2,27 @@
 import fs from 'node:fs';
 import {tool} from './media.mjs';
 
-const TYPES = new Set(['hook', 'trio', 'compare', 'stat', 'orbit', 'journey', 'outro']);
+const TYPES = new Set(['hook', 'trio', 'compare', 'stat', 'orbit', 'journey', 'bars', 'timeline', 'bigword', 'outro']);
+
+// shape checks for the data-driven scene types, so a bad script is rewritten instead of rendering an empty scene
+function shapeProblems(s, i) {
+  const out = [];
+  if (s.type === 'bars') {
+    const b = s.bars || [];
+    if (b.length < 2 || b.length > 4) out.push(`scene ${i} bars needs 2 to 4 bars`);
+    if (b.some((x) => !x.emoji || !x.label || !(Number(x.value) > 0))) out.push(`scene ${i} every bar needs an emoji, a label and a value above 0`);
+  }
+  if (s.type === 'timeline') {
+    const st = s.steps || [];
+    if (st.length < 2 || st.length > 4) out.push(`scene ${i} timeline needs 2 to 4 steps`);
+    if (st.some((x) => !x.emoji || !x.when || String(x.when).length > 9)) out.push(`scene ${i} every timeline step needs an emoji and a short "when" (max 8 characters)`);
+  }
+  if (s.type === 'bigword') {
+    const w = String(s.text || '').trim().split(/\s+/).filter(Boolean);
+    if (!w.length || w.length > 3 || w.some((x) => x.length > 11)) out.push(`scene ${i} bigword text must be 1 to 3 short words`);
+  }
+  return out;
+}
 
 export function checkSpec(spec, emojiSet) {
   const problems = [];
@@ -14,6 +34,7 @@ export function checkSpec(spec, emojiSet) {
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
+    problems.push(...shapeProblems(s, i));
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const words = sc.reduce((n, s) => n + (s.narration || '').split(/\s+/).length, 0);
@@ -33,7 +54,9 @@ const NUMBER = /\d|\b(two|three|four|five|six|seven|eight|nine|ten|twenty|thirty
 const SUBSCRIBE = /subscri|सब्सक्राइब/i;
 function askProblems(spec) {
   const mid = (spec.scenes || []).slice(1, -1).filter((s) => SUBSCRIBE.test(s.narration || ''));
-  return mid.length === 1 ? [] : [`${mid.length} middle scenes contain a subscribe ask: exactly one is required, right before the answer`];
+  if (mid.length !== 1) return [`${mid.length} middle scenes contain a subscribe ask: exactly one is required, right before the answer`];
+  // the ask rides on the end of a real story sentence; a scene that is only the ask stalls the video
+  return (mid[0].narration || '').split(/\s+/).length < 11 ? ['the subscribe ask must be the LAST sentence of a normal scene that first says something about the topic, not a scene on its own'] : [];
 }
 
 function hookProblems(spec) {
@@ -55,6 +78,7 @@ export function checkLongSpec(spec, emojiSet) {
   problems.push(...hookProblems(spec), ...askProblems(spec));
   sc.forEach((s, i) => {
     if (!types.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
+    problems.push(...shapeProblems(s, i));
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const chapters = sc.filter((s) => s.type === 'chapter');
@@ -75,6 +99,8 @@ export function collectEmojis(spec) {
   const out = [];
   for (const s of spec.scenes || []) {
     (s.items || []).forEach((it) => out.push(it.emoji));
+    (s.bars || []).forEach((it) => out.push(it.emoji));
+    (s.steps || []).forEach((it) => out.push(it.emoji));
     ['emoji', 'center', 'around', 'actor', 'flyer'].forEach((k) => s[k] && out.push(s[k]));
     (s.props || []).forEach((p) => out.push(p));
     s.left?.emoji && out.push(s.left.emoji);

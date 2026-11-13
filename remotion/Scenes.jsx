@@ -135,6 +135,98 @@ export const Stat = ({scene, cue}) => {
   );
 };
 
+// ---------- bars: an animated bar chart, the bars race to their values ----------
+const BAR_COLORS = ['linear-gradient(90deg,#ffb347,#ff6f61)', 'linear-gradient(90deg,#5ee7df,#3f8efc)', 'linear-gradient(90deg,#c471f5,#fa71cd)', 'linear-gradient(90deg,#a8e063,#56ab2f)'];
+export const Bars = ({scene, cue}) => {
+  const f = useCurrentFrame();
+  const bars = (scene.bars || []).slice(0, 4);
+  const n = bars.length || 1;
+  const max = Math.max(...bars.map((b) => Number(b.value) || 0), 1);
+  const rowH = n <= 2 ? 250 : n === 3 ? 215 : 175;
+  const top0 = CY - (n * rowH) / 2 + 10;
+  const at = cue(scene.at, 0.12);
+  return (
+    <AbsoluteFill>
+      {bars.map((b, i) => {
+        const p = pop(f, 3 + i * 4);
+        const val = Number(b.value) || 0;
+        const grow = interpolate(f, [at + i * 7, at + i * 7 + 30], [0, 1], {...clamp, easing: ease});
+        const w = 60 + (520 * val / max) * grow;
+        const isMax = val === max;
+        const icon = Math.min(150, rowH - 50);
+        return (
+          <div key={i} style={{position: 'absolute', left: 60, top: top0 + i * rowH, width: 960, height: rowH, opacity: fadeIn(p), translate: `${interpolate(p, [0, 1], [-60, 0])}px 0px`}}>
+            <Emoji name={b.emoji} size={icon} style={{left: 0, top: (rowH - icon) / 2 - 16, translate: `0px ${Math.sin((f + i * 14) / 20) * 5}px`}} />
+            <div style={{position: 'absolute', left: icon + 26, top: 6, fontWeight: 800, fontSize: 40, color: '#fff', textShadow: '0 4px 16px rgba(0,0,0,.5)', whiteSpace: 'nowrap'}}>{b.label}</div>
+            <div style={{position: 'absolute', left: icon + 26, top: 62, width: w, height: rowH - 118, borderRadius: 26, background: BAR_COLORS[i % 4],
+              boxShadow: isMax && grow > 0.95 ? '0 0 0 5px #ffd54a, 0 14px 40px rgba(255,213,74,.4)' : '0 14px 30px rgba(0,0,0,.3), inset 0 2px 0 rgba(255,255,255,.35)'}} />
+            <div style={{position: 'absolute', left: icon + 26 + w + 18, top: 62, height: rowH - 118, display: 'flex', alignItems: 'center', fontWeight: 800, fontSize: 58,
+              color: isMax ? '#ffd54a' : '#fff', textShadow: '0 6px 20px rgba(0,0,0,.5)', whiteSpace: 'nowrap', opacity: interpolate(grow, [0.05, 0.3], [0, 1], clamp)}}>
+              {fmt(val * grow, Number.isInteger(val) ? 0 : 1)}{scene.unit ? <span style={{fontSize: 34, marginLeft: 8}}>{String(scene.unit).trim()}</span> : null}
+            </div>
+          </div>
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+
+// ---------- timeline: a line draws itself through 2-4 moments in order ----------
+export const Timeline = ({scene, cue}) => {
+  const f = useCurrentFrame();
+  const steps = (scene.steps || []).slice(0, 4);
+  const n = steps.length || 1;
+  const xs = steps.map((_, i) => (n === 1 ? 540 : 150 + (780 * i) / (n - 1)));
+  const ats = steps.map((s, i) => cue(s.at, 0.08 + (0.32 * i) / Math.max(1, n - 1)));
+  const lineTo = interpolate(f, [ats[0], ats[n - 1] + 8], [xs[0], xs[n - 1]], {...clamp, easing: Easing.inOut(Easing.cubic)});
+  const size = n <= 2 ? 250 : n === 3 ? 210 : 170;
+  return (
+    <AbsoluteFill>
+      <div style={{position: 'absolute', left: xs[0], top: CY + 86, width: xs[n - 1] - xs[0], height: 12, borderRadius: 6, background: 'rgba(255,255,255,.16)'}} />
+      <div style={{position: 'absolute', left: xs[0], top: CY + 86, width: Math.max(0, lineTo - xs[0]), height: 12, borderRadius: 6, background: '#ffd54a', boxShadow: '0 0 22px rgba(255,213,74,.7)'}} />
+      {steps.map((s, i) => {
+        const p = pop(f, ats[i]);
+        const up = i % 2 === 0;
+        return (
+          <React.Fragment key={i}>
+            <div style={{position: 'absolute', left: xs[i] - 22, top: CY + 70, width: 44, height: 44, borderRadius: '50%', background: p > 0.3 ? '#ffd54a' : '#5a6480',
+              border: '6px solid #fff', boxSizing: 'border-box', scale: interpolate(p, [0, 1], [0.6, 1])}} />
+            <Emoji name={s.emoji} size={size} style={{left: xs[i] - size / 2, top: up ? CY - size - 20 : CY - size - 60, opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.4, 1]),
+              translate: `0px ${Math.sin((f + i * 17) / 22) * 7}px`}} />
+            <Label text={s.when} x={xs[i]} y={CY + 136} w={n === 4 ? 240 : 300} size={n === 4 ? 44 : 54} color="#ffd54a" style={{opacity: fadeIn(p)}} />
+            <Label text={s.label} x={xs[i]} y={CY + 200} w={n === 4 ? 240 : 300} size={n === 4 ? 32 : 38} style={{opacity: fadeIn(pop(f, ats[i] + 5))}} />
+          </React.Fragment>
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+
+// ---------- bigword: one to three words slam onto the screen (for the single most shocking line) ----------
+export const BigWord = ({scene, cue}) => {
+  const f = useCurrentFrame();
+  const words = String(scene.text || '').toUpperCase().split(/\s+/).filter(Boolean).slice(0, 3);
+  const at = cue(scene.at, 0.1);
+  const longest = Math.max(...words.map((w) => w.length), 3);
+  const size = Math.min(250, Math.floor(1220 / longest));
+  const blockH = words.length * size * 1.02;
+  const e = pop(f, 3);
+  return (
+    <AbsoluteFill>
+      {scene.emoji && <Emoji name={scene.emoji} size={230} style={{left: 425, top: CY - blockH / 2 - 250, opacity: fadeIn(e), scale: interpolate(e, [0, 1], [0.4, 1]), rotate: `${Math.sin(f / 9) * 6}deg`}} />}
+      <div style={{position: 'absolute', left: 30, right: 30, top: CY - blockH / 2 + (scene.emoji ? 30 : -40), textAlign: 'center', fontWeight: 800, fontSize: size, lineHeight: 1.02, letterSpacing: -4}}>
+        {words.map((w, i) => {
+          const a = at + i * 6;
+          const p = spring({frame: f - a, fps: FPS, config: {damping: 8, stiffness: 240, mass: 0.6}});
+          const shake = f - a >= 0 && f - a < 9 ? Math.sin((f - a) * 2.4) * (9 - (f - a)) * 1.6 : 0;
+          return <div key={i} style={{color: i === words.length - 1 ? '#ffd54a' : '#fff', opacity: interpolate(p, [0, 0.25], [0, 1], clamp), scale: interpolate(p, [0, 1], [2.1, 1]),
+            translate: `${shake}px 0px`, rotate: `${(i % 2 ? 1 : -1) * 2.5}deg`, textShadow: '0 14px 44px rgba(0,0,0,.6)', WebkitTextStroke: '12px rgba(8,16,40,.8)', paintOrder: 'stroke fill'}}>{w}</div>;
+        })}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 // ---------- orbit: centre icon, satellites, optional progress ring ----------
 export const Orbit = ({scene, cue}) => {
   const f = useCurrentFrame();
@@ -228,4 +320,4 @@ export const Outro = ({cue}) => {
   </>);
 };
 
-export const SCENES = {hook: Hook, trio: Trio, compare: Compare, stat: Stat, orbit: Orbit, journey: Journey, outro: Outro};
+export const SCENES = {hook: Hook, trio: Trio, compare: Compare, stat: Stat, orbit: Orbit, journey: Journey, bars: Bars, timeline: Timeline, bigword: BigWord, outro: Outro};

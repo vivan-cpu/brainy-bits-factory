@@ -14,6 +14,9 @@ const SCENE_TYPES = `SCENE TYPES (fields)
 - stat: {type, narration, mood, emoji, value: number, prefix?: string, suffix?: string (e.g. " km/h", "%", "x"), label: 2-6 words, at?: word}
 - orbit: {type, narration, mood, center: emoji, around: emoji, count: 3-10, ring?: fraction 0-1 to fill a progress ring (e.g. 0.67 for two thirds), label?: 2-6 words, at?: word}
 - journey: {type, narration, mood, actor: emoji, props: [emoji, emoji] (ground scenery), flyer?: emoji passing in the background}
+- bars: {type, narration, mood, bars: [{emoji, label (1-2 words), value: number}] (2-4 bars, same unit, the narration must say or clearly imply every value), unit?: short text after each number like "m" or "km/h", at?: word}  (a racing bar chart: best for comparing sizes, speeds, ages or amounts of 2-4 things)
+- timeline: {type, narration, mood, steps: [{emoji, when (a year, age or time like "1928" or "Day 3", max 8 chars), label (1-3 words), at?: word}] (2-4 steps in time order)}  (best for how something changed or happened step by step)
+- bigword: {type, narration, mood, text: 1-3 short words that slam onto the screen (the single most shocking word or number phrase of the video, like "1,000 YEARS" or "IT GLOWS"), emoji?, at?: word}  (use at most ONCE per video, on the reveal or the twist)
 - outro: {type, narration, mood}`;
 
 export function longPrompt({category, used, emojiNames, feedback, insights = ''}) {
@@ -32,7 +35,7 @@ HARD RULES
 - Scene 2 is a trio promising what is coming, in 15-25 words, without revealing any fact.
 - The six facts must each be about a different thing inside the theme, and none may be one of the already-used topics above.
 - Then exactly 6 facts. Each fact starts with one scene of type "chapter", numbered 1 to 6 in order. Its narration (5-12 words) teases that fact without answering it.
-- After each chapter come 3 or 4 scenes of types trio, compare, stat, orbit or journey, using at least 2 different types per fact. Each scene's narration is 1-2 spoken sentences (14-32 words) and the visual must match what is being said. Reveal the answer in the second scene of the fact, not in the chapter.
+- After each chapter come 3 or 4 scenes of types trio, compare, stat, orbit, journey, bars, timeline or bigword, using at least 2 different types per fact. Each scene's narration is 1-2 spoken sentences (14-32 words) and the visual must match what is being said. Reveal the answer in the second scene of the fact, not in the chapter.
 - Vary the wording between facts, and link each fact to the next with a short tease at the end of its last scene.
 - SUBSCRIBE ASK: the chapter scene of fact 6 (the best fact) must end with one playful sentence of 4 to 9 words containing the word "subscribe", for example "Subscribe before I show you the best one." It appears exactly once before the outro.
 - Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
@@ -77,7 +80,7 @@ ${story ? `STORY RULES (this video is a true story, not a list of facts)
 - Every scene must make the viewer want the next one: end scenes on a question, a danger or a "but".
 - The ending is the payoff: the surprising outcome or twist lands in the last scene before the outro.
 - Stick to what reliable sources say happened. Never invent dialogue, names, numbers or details. If something is uncertain, say "historians think" or "reportedly".
-- Use journey scenes for travel or chases and compare or stat scenes for the turning point, so the story keeps moving on screen.
+- Use journey scenes for travel or chases, a timeline scene for the order of events and compare, stat or bigword scenes for the turning point, so the story keeps moving on screen.
 - Only use a stat scene for a real, meaningful number from the sources (a weight, a distance, a year count), never a filler number like 1.
 - Legends that grew around the story (for example "he never dropped a single shell") must be told as legends ("soldiers said...") or left out.
 ` : ''}
@@ -97,7 +100,7 @@ HARD RULES
 - Scene 2 builds the suspense. The answer, with its number or main fact, lands in scene 3 or later, around the middle of the video.
 - Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part..."). The twist scene should be a compare, stat or orbit with a clear visual reveal, not a static row of icons.
 - Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
-- Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
+- Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey, bars, timeline, bigword, and no more than one trio. Prefer the type that SHOWS the fact: bars for comparing amounts, timeline for a sequence, bigword for the shock line. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
 - Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
@@ -144,7 +147,7 @@ LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a 
 }
 
 export function factCheckPrompt(spec) {
-  const lines = spec.scenes.map((s, i) => `${i + 1}. ${s.narration}${s.type === 'stat' ? ` [on screen: ${s.prefix || ''}${s.value}${s.suffix || ''} ${s.label || ''}]` : ''}${s.type === 'compare' ? ` [on screen: ${s.left?.big} ${s.left?.label} vs ${s.right?.big} ${s.right?.label}]` : ''}`).join('\n');
+  const lines = spec.scenes.map((s, i) => `${i + 1}. ${s.narration}${s.type === 'stat' ? ` [on screen: ${s.prefix || ''}${s.value}${s.suffix || ''} ${s.label || ''}]` : ''}${s.type === 'compare' ? ` [on screen: ${s.left?.big} ${s.left?.label} vs ${s.right?.big} ${s.right?.label}]` : ''}${s.type === 'bars' ? ` [on screen bar chart: ${(s.bars || []).map((b) => `${b.label} ${b.value}${s.unit || ''}`).join(', ')}]` : ''}${s.type === 'timeline' ? ` [on screen timeline: ${(s.steps || []).map((b) => `${b.when} ${b.label}`).join(', ')}]` : ''}${s.type === 'bigword' ? ` [on screen: ${s.text}]` : ''}`).join('\n');
   return `You are a strict fact-checker for an educational YouTube Shorts channel. Check every factual claim in this script, including on-screen numbers.
 Topic: ${spec.topic}
 Script:
