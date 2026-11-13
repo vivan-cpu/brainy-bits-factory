@@ -22,7 +22,7 @@ async function accessToken() {
 async function upload(token, meta, publishAt) {
   const file = path.join(ROOT, 'out', meta.file);
   const size = fs.statSync(file).size;
-  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}\n\nAnimated by Brainy Bits.`.slice(0, 4900);
+  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}\n\nSubscribe for new weird facts every day: https://www.youtube.com/@factsbrainybits?sub_confirmation=1\nAnimated by Brainy Bits.`.slice(0, 4900);
   const status = {privacyStatus: publishAt ? 'private' : PRIVACY, selfDeclaredMadeForKids: false};
   if (publishAt) status.publishAt = publishAt;
   const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
@@ -36,6 +36,13 @@ async function upload(token, meta, publishAt) {
   return (await put.json()).id;
 }
 
+// custom thumbnail for long videos; needs a phone-verified channel, so a refusal is not an error
+async function setThumbnail(token, videoId, file) {
+  const res = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}&uploadType=media`, {
+    method: 'POST', headers: {authorization: `Bearer ${token}`, 'content-type': 'image/jpeg'}, body: fs.readFileSync(file)});
+  console.log(res.ok ? '  thumbnail set' : `  thumbnail not set: HTTP ${res.status} ${(await res.text()).slice(0, 200)}`);
+}
+
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'out/manifest.json'), 'utf8'));
 const token = await accessToken();
 const start = new Date(); start.setUTCMinutes(0, 0, 0); start.setUTCHours(start.getUTCHours() + 1);
@@ -43,8 +50,15 @@ let failed = 0;
 for (const [i, m] of manifest.entries()) {
   const at = SCHEDULE ? new Date(start.getTime() + i * 3 * 3600 * 1000).toISOString() : null;
   try {
-    const id = await upload(token, m, at);
-    console.log(`uploaded "${m.title}" -> https://youtube.com/shorts/${id}${at ? ` (publishes ${at})` : ''}`);
+    let id;
+    try { id = await upload(token, m, at); }
+    catch (e) { // one retry after a pause: most failures are short network or quota hiccups
+      console.log(`  retrying "${m.title}" in 90s: ${e.message}`);
+      await new Promise((r) => setTimeout(r, 90000));
+      id = await upload(token, m, at);
+    }
+    console.log(`uploaded "${m.title}" -> https://youtube.com/${m.long ? 'watch?v=' : 'shorts/'}${id}${at ? ` (publishes ${at})` : ''}`);
+    if (m.thumb && fs.existsSync(path.join(ROOT, 'out', m.thumb))) await setThumbnail(token, id, path.join(ROOT, 'out', m.thumb)).catch((e) => console.log(`  thumbnail not set: ${e.message}`));
   } catch (e) { failed++; console.log(`✗ ${m.title}: ${e.message}`); }
 }
 if (failed) process.exit(1);

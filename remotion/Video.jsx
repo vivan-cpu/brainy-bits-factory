@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate, spring, Easing} from 'remotion';
+import {AbsoluteFill, Audio, Img, Sequence, staticFile, useCurrentFrame, interpolate, spring, Easing} from 'remotion';
 import {loadFont} from '@remotion/google-fonts/Montserrat';
 import {loadFont as loadHindi} from '@remotion/google-fonts/Baloo2';
 import {World} from './Worlds.jsx';
@@ -125,17 +125,50 @@ export const Captions = ({timing, hideUntil = 0, box}) => {
   const op = Math.min(interpolate(enterF, [0, 5], [0, 1], clamp), interpolate(f, [endF - 3, endF], [1, 0], clamp));
   return (
     <div style={{position: 'absolute', left: 300, width: 730, top: 1140, height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      textAlign: 'center', fontWeight: 800, fontSize: 76, lineHeight: 1.12, color: '#fff', textShadow: '0 6px 28px rgba(0,0,0,.55)', opacity: op,
+      textAlign: 'center', fontWeight: 800, fontSize: 80, lineHeight: 1.12, color: '#fff', textShadow: '0 6px 28px rgba(0,0,0,.55)', WebkitTextStroke: '10px rgba(8,16,40,.85)', paintOrder: 'stroke fill', opacity: op,
       translate: `0px ${interpolate(enterF, [0, 6], [22, 0], {...clamp, easing: ease})}px`, ...box}}>
       <div style={{width: '100%', overflowWrap: 'break-word'}}>
         {c.map((w, j) => {
           const on = t >= w.s;
-          return <span key={j} style={{display: 'inline-block', margin: '0 10px', color: on ? (t < w.e + 0.08 ? '#ffd54a' : '#fff') : 'rgba(255,255,255,.55)'}}>{w.w}</span>;
+          const live = on && t < w.e + 0.08;
+          const k = live ? interpolate(t - w.s, [0, 0.09, 0.2], [1, 1.14, 1.06], clamp) : 1;
+          return <span key={j} style={{display: 'inline-block', margin: '0 10px', scale: k, color: on ? (live ? '#ffd54a' : '#fff') : 'rgba(255,255,255,.6)'}}>{w.w}</span>;
         })}
       </div>
     </div>
   );
 };
+
+// Animated SUBSCRIBE button with a bell: pops in while Brainy says the mid-video subscribe ask, then leaves.
+export const SubscribeNudge = ({timing, box}) => {
+  const f = useCurrentFrame();
+  let at = null;
+  timing.scenes.slice(0, -1).forEach((s) => s.words.forEach((w) => { if (at === null && /subscri|सब्सक्राइब/i.test(w.w)) at = w.s; }));
+  if (at === null) return null;
+  const g = f - Math.round((at - 0.25) * FPS);
+  if (g < 0 || g > 84) return null;
+  const p = spring({frame: g, fps: FPS, config: {damping: 9, stiffness: 190, mass: 0.7}});
+  const out = interpolate(g, [72, 84], [1, 0], clamp);
+  const tap = interpolate(g, [24, 29, 36], [1, 0.9, 1], clamp); // the button gets "pressed"
+  const done = g >= 29;
+  return (
+    <div style={{position: 'absolute', left: 300, width: 730, top: 1430, height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, opacity: out, scale: p * tap, ...box}}>
+      <div style={{padding: '20px 44px', borderRadius: 70, fontWeight: 800, fontSize: 54, letterSpacing: 1, color: done ? '#1a1a1a' : '#fff',
+        background: done ? '#f2f2f2' : '#ff1f1f', boxShadow: `0 14px 40px rgba(0,0,0,.45), 0 0 0 ${interpolate(g, [29, 46], [0, 34], clamp)}px rgba(255,255,255,${interpolate(g, [29, 46], [0.5, 0], clamp)})`}}>
+        {done ? 'SUBSCRIBED' : 'SUBSCRIBE'}
+      </div>
+      <div style={{position: 'relative', width: 96, height: 96, rotate: `${done ? Math.sin(g / 1.6) * interpolate(g, [29, 60], [22, 0], clamp) : 0}deg`, transformOrigin: '50% 10%'}}>
+        <Img src={staticFile('emoji/bell.svg')} style={{width: 96, height: 96, filter: 'drop-shadow(0 10px 20px rgba(0,0,0,.4))'}} />
+      </div>
+    </div>
+  );
+};
+
+// quiet original background loop (composed in code, see ShortsFactory/music): fades in under the hook and out at the end
+export const Music = ({total, volume = 0.13}) => (
+  <Audio src={staticFile('music/curious.mp3')} loop
+    volume={(f) => volume * interpolate(f, [0, 20, total - 30, total - 4], [0, 1, 1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'})} />
+);
 
 export const Video = ({jobId, spec, timing}) => {
   const starts = timing.scenes.map((s) => Math.round(s.start * FPS));
@@ -161,6 +194,8 @@ export const Video = ({jobId, spec, timing}) => {
       <BrainyLayer spec={spec} timing={timing} />
       <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} badges={Math.min(spec.scenes[0]?.items?.length || 1, 3)} />
       <Captions timing={timing} hideUntil={spec.hookText ? HOOK_FRAMES + 4 : 0} />
+      <SubscribeNudge timing={timing} />
+      <Music total={durationFor(timing)} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
       {spec.hookText && <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />}
       {starts.slice(1).map((s, i) => (

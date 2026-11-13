@@ -10,14 +10,14 @@ export function checkSpec(spec, emojiSet) {
   if (sc.length < 4 || sc.length > 8) problems.push(`scene count ${sc.length}`);
   if (sc[0]?.type !== 'hook') problems.push('first scene is not a hook');
   if (!sc[0]?.items?.length) problems.push('hook needs at least one item: its first emoji fills the screen in the opening');
-  problems.push(...hookProblems(spec));
+  problems.push(...hookProblems(spec), ...askProblems(spec));
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const words = sc.reduce((n, s) => n + (s.narration || '').split(/\s+/).length, 0);
-  if (words < 45 || words > 130) problems.push(`narration length ${words} words`);
+  if (words < 50 || words > 136) problems.push(`narration length ${words} words`);
   if (!spec.title || spec.title.length > 100) problems.push('bad title');
   const middle = new Set(sc.slice(1, -1).map((s) => s.type));
   if (middle.size < 2) problems.push('not enough visual variety');
@@ -28,6 +28,13 @@ export function checkSpec(spec, emojiSet) {
 }
 
 const NUMBER = /\d|\b(two|three|four|five|six|seven|eight|nine|ten|twenty|thirty|forty|fifty|hundred|thousand|million|billion|trillion|percent|times)\b/i;
+
+// one subscribe ask before the payoff (viewers leave right after the answer, so the outro alone reaches few of them)
+const SUBSCRIBE = /subscri|सब्सक्राइब/i;
+function askProblems(spec) {
+  const mid = (spec.scenes || []).slice(1, -1).filter((s) => SUBSCRIBE.test(s.narration || ''));
+  return mid.length === 1 ? [] : [`${mid.length} middle scenes contain a subscribe ask: exactly one is required, right before the answer`];
+}
 
 function hookProblems(spec) {
   const hook = spec.scenes?.[0];
@@ -45,7 +52,7 @@ export function checkLongSpec(spec, emojiSet) {
   if (sc[0]?.type !== 'hook') problems.push('first scene is not a hook');
   if (!sc[0]?.items?.length) problems.push('hook needs at least one item: its first emoji fills the screen in the opening');
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
-  problems.push(...hookProblems(spec));
+  problems.push(...hookProblems(spec), ...askProblems(spec));
   sc.forEach((s, i) => {
     if (!types.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);

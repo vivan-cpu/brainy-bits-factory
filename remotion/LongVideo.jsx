@@ -3,7 +3,7 @@ import {AbsoluteFill, Audio, Sequence, staticFile, useCurrentFrame, interpolate,
 import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
 import {SCENES, FPS, FADE, Emoji, pop} from './Scenes.jsx';
-import {Captions, SceneWrap, makeCue, durationFor, fontFor, HOOK_FRAMES} from './Video.jsx';
+import {Captions, SceneWrap, makeCue, durationFor, fontFor, HOOK_FRAMES, Music, SubscribeNudge} from './Video.jsx';
 
 // 16:9 long video. The Shorts scenes are reused as they are: their content zone (y 160..1110 of a 1080x1920 stage)
 // sits on the right, with Brainy and the captions on the left.
@@ -14,7 +14,7 @@ const STAGE_TOP = -110;
 // the Worlds are drawn for a 1080-wide canvas, so scale one up to cover 1920x1080
 const WideWorld = ({world, sceneStarts}) => (
   <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 607.5, overflow: 'hidden', transform: `scale(${16 / 9})`, transformOrigin: '0 0'}}>
-    <World world={world} sceneStarts={sceneStarts} />
+    <World world={world} sceneStarts={sceneStarts} wide />
   </div>
 );
 
@@ -125,6 +125,8 @@ export const LongVideo = ({jobId, spec, timing}) => {
       <OpeningTitle text={spec.hookText} />
       <Progress spec={spec} timing={timing} />
       <Captions timing={timing} hideUntil={HOOK_FRAMES + 4} box={{left: 60, width: 720, top: 680, height: 300, fontSize: 66}} />
+      <SubscribeNudge timing={timing} box={{left: 60, width: 720, top: 930, height: 120}} />
+      <Music total={durationFor(timing)} volume={0.1} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
       <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />
       {starts.slice(1).map((s, i) => (

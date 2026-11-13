@@ -2,12 +2,12 @@ import React from 'react';
 import {AbsoluteFill, useCurrentFrame, interpolateColors} from 'remotion';
 
 export const WORLDS = {
-  ocean: [['#04223f', '#0b5876'], ['#04283f', '#0c6466'], ['#061947', '#1d4c9c']],
-  space: [['#05031a', '#1a0f45'], ['#070420', '#2a1460'], ['#030212', '#14224f']],
-  body: [['#2a0718', '#6a1438'], ['#1f0618', '#5a1a4a'], ['#2b0a12', '#7a2030']],
-  lab: [['#061a24', '#0d4a52'], ['#0a1430', '#1f3a7a'], ['#071c1c', '#14594a']],
-  sky: [['#0b3a73', '#3a8fd6'], ['#123a7a', '#5aa0e0'], ['#0a2f66', '#2f7fc8']],
-  forest: [['#06200f', '#1a5a2a'], ['#0b2410', '#2f6a1f'], ['#071f18', '#1d5a40']],
+  ocean: [['#053a66', '#0f86a8'], ['#06426a', '#12989a'], ['#082a72', '#2a6fd0']],
+  space: [['#0a0630', '#2f1a78'], ['#0d0738', '#45208f'], ['#060426', '#22388a']],
+  body: [['#4a0c2c', '#a8245a'], ['#3a0a30', '#8f2a78'], ['#4c1020', '#b8324a']],
+  lab: [['#082c3c', '#128090'], ['#0e2050', '#2f58b8'], ['#0a3030', '#1f8a72']],
+  sky: [['#0f55a8', '#58b0f0'], ['#1658b0', '#78bff5'], ['#0e4898', '#48a0e6']],
+  forest: [['#0a3418', '#2a8a40'], ['#103a18', '#479a2e'], ['#0b3226', '#2c8a62']],
 };
 
 const Rays = ({f, color = 'rgba(190,235,255,.20)'}) => [0, 1, 2, 3, 4].map((i) => (
@@ -46,8 +46,63 @@ const Clouds = ({f}) => [0, 1, 2, 3].map((i) => (
     borderRadius: 140, background: 'rgba(255,255,255,.18)', filter: 'blur(18px)'}} />
 ));
 
+// Layered scenery along the bottom of the frame so the lower third is never an empty gradient.
+// Each world has its own ground: seabed, planet horizon, tissue, lab floor, cloud bank, forest hills.
+const GROUND = {
+  ocean: ['#0a4a63', '#073a52', '#052a3f'],
+  space: ['#3b2a7a', '#241a55', '#150f38'],
+  body: ['#8a2348', '#6a1838', '#4a1028'],
+  lab: ['#14606a', '#0e4a56', '#083540'],
+  sky: ['#ffffff', '#e6f1ff', '#cfe3fb'],
+  forest: ['#2f7a35', '#1f5c2a', '#12401d'],
+};
+
+const hill = (f, i, w, h, amp) => {
+  const pts = [];
+  for (let x = 0; x <= w; x += 40) {
+    const y = h * 0.42 - i * 26 + Math.sin(x / (190 - i * 30) + i * 2.1 + f / (160 + i * 60)) * amp + Math.sin(x / 71 + i) * amp * 0.28;
+    pts.push(`${x},${y.toFixed(1)}`);
+  }
+  return `M0,${h} L${pts.join(' L')} L${w},${h} Z`;
+};
+
+const Scenery = ({world, f, wide}) => {
+  const W = 1080, H = 460;
+  const top = (wide ? 607.5 : 1920) - H * (wide ? 0.62 : 1);
+  const c = GROUND[world] || GROUND.ocean;
+  const sky = world === 'sky';
+  return (
+    <div style={{position: 'absolute', left: 0, top, width: W, height: H}}>
+      {world === 'space' && (
+        <div style={{position: 'absolute', left: -360, top: 150, width: 1800, height: 1800, borderRadius: '50%',
+          background: 'radial-gradient(circle at 50% 0%, #6a54c8 0%, #3a2a86 22%, #1a1248 60%)', boxShadow: '0 -18px 90px rgba(150,130,255,.55), inset 0 30px 80px rgba(190,170,255,.35)'}} />
+      )}
+      {world === 'forest' && [0, 1, 2, 3, 4, 5, 6].map((i) => {
+        const x = 40 + i * 160 + (i % 2) * 30, s = 0.8 + ((i * 7) % 5) * 0.12;
+        return <div key={i} style={{position: 'absolute', left: x, top: 60 - s * 60 + Math.sin(i * 2.3) * 14, width: 0, height: 0, borderLeft: `${46 * s}px solid transparent`, borderRight: `${46 * s}px solid transparent`,
+          borderBottom: `${170 * s}px solid #164a22`, opacity: 0.9, rotate: `${Math.sin(f / 50 + i) * 1.2}deg`, transformOrigin: '50% 100%'}} />;
+      })}
+      {world !== 'space' && (
+        <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{position: 'absolute', left: 0, top: 0, filter: sky ? 'blur(10px)' : 'none', opacity: sky ? 0.5 : 1}}>
+          {[0, 1, 2].map((i) => <path key={i} d={hill(f, i, W, H, sky ? 46 : 34)} fill={c[i]} opacity={sky ? 0.75 : 0.96} transform={`translate(0 ${i * 96})`} />)}
+        </svg>
+      )}
+      {world === 'ocean' && [0, 1, 2, 3, 4, 5].map((i) => (
+        <div key={i} style={{position: 'absolute', left: 70 + i * 185 + (i % 2) * 40, bottom: 40 + (i % 3) * 30, width: 44, height: 170 + (i % 3) * 70, borderRadius: "50% 50% 14px 14px",
+          background: 'linear-gradient(180deg, #2fbf8a, #0d6a56)', transformOrigin: '50% 100%', rotate: `${Math.sin(f / 26 + i * 1.4) * 9}deg`, opacity: 0.85}} />
+      ))}
+      {world === 'lab' && (
+        <div style={{position: 'absolute', left: -200, right: -200, top: 150, bottom: 0, opacity: 0.5, transform: 'perspective(700px) rotateX(62deg)', transformOrigin: '50% 0%',
+          backgroundImage: 'linear-gradient(rgba(140,240,255,.55) 2px, transparent 2px), linear-gradient(90deg, rgba(140,240,255,.55) 2px, transparent 2px)',
+          backgroundSize: '90px 90px', backgroundPosition: `0px ${(f * 1.2) % 90}px`}} />
+      )}
+    </div>
+  );
+};
+
 // sceneStarts: frame numbers where each scene begins (for palette cross-fades)
-export const World = ({world = 'ocean', sceneStarts = [0]}) => {
+// wide: the world is cropped to its top 607px (16:9 long video), so the scenery sits there
+export const World = ({world = 'ocean', sceneStarts = [0], wide = false}) => {
   const f = useCurrentFrame();
   const pal = WORLDS[world] || WORLDS.ocean;
   const stops = [], top = [], bot = [];
@@ -67,7 +122,9 @@ export const World = ({world = 'ocean', sceneStarts = [0]}) => {
       {world === 'lab' && <><Grid /><Particles f={f} n={30} /></>}
       {world === 'sky' && <><Rays f={f} color="rgba(255,250,220,.22)" /><Clouds f={f} /></>}
       {world === 'forest' && <><Rays f={f} color="rgba(230,255,190,.18)" /><Particles f={f} n={30} up={false} color="rgba(220,255,170,.5)" /></>}
-      <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 45%, rgba(0,0,0,.45) 100%)'}} />
+      <Scenery world={world} f={f} wide={wide} />
+      <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 34%, rgba(255,255,255,.10) 0%, rgba(255,255,255,0) 38%)'}} />
+      <AbsoluteFill style={{background: 'radial-gradient(ellipse at 50% 42%, rgba(0,0,0,0) 52%, rgba(0,0,0,.34) 100%)'}} />
     </AbsoluteFill>
   );
 };

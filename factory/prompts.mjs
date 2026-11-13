@@ -1,6 +1,8 @@
+// animal and ocean Shorts get 3 to 8 times the views of the rest (Nov 2026 stats), so they come up about half the time
 export const CATEGORIES = [
-  'animals', 'space', 'human body', 'science', 'earth and nature', 'ocean life', 'weird history',
-  'food science', 'dinosaurs and fossils', 'technology', 'psychology and the brain', 'insects and bugs',
+  'animals', 'space', 'ocean life', 'human body', 'animals', 'science', 'ocean life', 'earth and nature',
+  'animals', 'weird history', 'insects and bugs', 'food science', 'ocean life', 'dinosaurs and fossils',
+  'animals', 'technology', 'ocean life', 'psychology and the brain',
 ];
 
 const WORLDS = 'ocean (sea, water animals), space (planets, stars), body (human body, health), lab (science, tech, chemistry, history), sky (weather, birds, flight), forest (land animals, plants, insects, nature)';
@@ -14,12 +16,13 @@ const SCENE_TYPES = `SCENE TYPES (fields)
 - journey: {type, narration, mood, actor: emoji, props: [emoji, emoji] (ground scenery), flyer?: emoji passing in the background}
 - outro: {type, narration, mood}`;
 
-export function longPrompt({category, used, emojiNames, feedback}) {
+export function longPrompt({category, used, emojiNames, feedback, insights = ''}) {
   return `You write scripts for "Brainy Bits", a YouTube channel where Brainy, a cute cartoon brain mascot, explains true, surprising facts. This script is for a 3 to 4 minute landscape video: six surprising facts on one theme, ordered so the most surprising fact comes last. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
 TASK: Pick ONE specific, interesting theme in the category "${category}".
 ${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
 ${feedback ? `The previous draft was rejected for these reasons, fix them or pick a different theme: ${feedback}` : ''}
+${insights ? `WHAT THIS CHANNEL'S VIEWERS WATCH (real view counts): ${insights} Learn from the pattern: prefer the kind of subject, hook and title wording of the most watched ones, and avoid the style of the least watched. Never repeat their topics.` : ''}
 
 HARD RULES
 - Facts must be accurate and supported by mainstream sources (NASA, Britannica, National Geographic, Smithsonian, peer-reviewed science). No myths, no rounded-up exaggerations, hedge with "about"/"up to" when values vary. Avoid contested records and superlatives unless certain. Use metric units exactly as spoken.
@@ -27,10 +30,12 @@ HARD RULES
 - Scene 1 MUST be type "hook": ONE short, bold sentence (6-14 words) that teases the whole video. It must NOT give any answer and must contain no numbers. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Its first item is shown huge from the first frame, so it must be the most literal emoji of the theme.
 - "hookText": 2-5 punchy words shown huge in the first second. It teases, contains no number and no emojis.
 - Scene 2 is a trio promising what is coming, in 15-25 words, without revealing any fact.
+- The six facts must each be about a different thing inside the theme, and none may be one of the already-used topics above.
 - Then exactly 6 facts. Each fact starts with one scene of type "chapter", numbered 1 to 6 in order. Its narration (5-12 words) teases that fact without answering it.
 - After each chapter come 3 or 4 scenes of types trio, compare, stat, orbit or journey, using at least 2 different types per fact. Each scene's narration is 1-2 spoken sentences (14-32 words) and the visual must match what is being said. Reveal the answer in the second scene of the fact, not in the chapter.
 - Vary the wording between facts, and link each fact to the next with a short tease at the end of its last scene.
-- Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
+- SUBSCRIBE ASK: the chapter scene of fact 6 (the best fact) must end with one playful sentence of 4 to 9 words containing the word "subscribe", for example "Subscribe before I show you the best one." It appears exactly once before the outro.
+- Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
 - Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
@@ -46,7 +51,7 @@ OUTPUT exactly one JSON object:
  "hookText": "2-5 WORD HOOK",
  "category": "${category}",
  "world": "...",
- "title": "curious YouTube title, max 70 characters, no emojis, literally true and fully delivered by the video",
+ "title": "curious YouTube title, max 70 characters, no emojis, literally true and fully delivered by the video. It names the theme and the count, for example \"6 Ocean Animals That Break the Rules of Biology\"",
  "description": "3 short sentences that add context + 3 to 5 hashtags. Do not use #shorts.",
  "tags": ["8 to 12 search tags"],
  "sources": ["3 to 6 credible sources supporting the main facts"],
@@ -63,7 +68,7 @@ export const STORY_CATEGORIES = [
   'space missions', 'unbelievable coincidences', 'ocean and shipwreck mysteries', 'record-breaking journeys',
 ];
 
-export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false}) {
+export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false, insights = ''}) {
   return `You write scripts for "Brainy Bits", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
 TASK: ${topic ? `Write a script about: "${topic}".` : story ? `Tell ONE gripping, TRUE, well-documented story in the theme "${category}": a real event, person or animal with a clear beginning, a problem, a turning point and a surprising ending.` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
@@ -78,18 +83,20 @@ ${story ? `STORY RULES (this video is a true story, not a list of facts)
 ` : ''}
 ${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
 ${feedback ? `A fact-checker rejected the previous draft for these reasons, fix them or pick a different topic: ${feedback}` : ''}
+${insights ? `WHAT THIS CHANNEL'S VIEWERS WATCH (real view counts): ${insights} Learn from the pattern: prefer the kind of subject, hook and title wording of the most watched ones, and avoid the style of the least watched. Never repeat their topics.` : ''}
 
 HARD RULES
 - Facts must be accurate and supported by mainstream sources (NASA, Britannica, National Geographic, Smithsonian, peer-reviewed science). No myths, no rounded-up exaggerations, hedge with "about"/"up to" when values vary.
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
-- The title must be literally true and fully delivered by the script.
-- ${story ? '6 to 8 scenes. Total narration 80 to 110 words (35 to 45 seconds spoken).' : '5 to 7 scenes. Total narration 60 to 85 words (25 to 32 seconds spoken).'}
+- The title must be literally true and fully delivered by the script. It must NAME the subject (the animal, person, object or event) in plain words so a stranger knows what the video is about, and add one curiosity gap. Bad (vague): "The snack that changed history". Good: "A melted chocolate bar invented the microwave".
+- ${story ? '6 to 8 scenes. Total narration 86 to 116 words (36 to 46 seconds spoken).' : '5 to 7 scenes. Total narration 66 to 92 words (26 to 34 seconds spoken).'}
 - Scene 1 MUST be type "hook" and must stop the scroll in the first 2 seconds: ONE short, bold sentence (6-14 words) that TEASES the fact and makes the viewer need the answer. It must NOT give the answer: no numbers, no measurements and no statement of the main fact. Make it concrete and specific. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (gives it away): "A sloth can hold its breath four times longer than a dolphin." Good (teases): "This sleepy animal beats a dolphin at one thing." / "Astronauts left something on the Moon that won't go away." Only the first item in the hook is required; up to 3 badges tease what's coming, and they must not reveal the answer either.
 - The FIRST item of the hook scene is shown huge on screen from the very first frame. It must be the most literal emoji of the main subject (the animal, object or body part the video is about).
 - "hookText": 2-5 punchy words shown huge on screen in the first second, and the only text on screen at that moment. It must tease, not answer, and must not contain a number (for example "IT BEATS A DOLPHIN" or "IT NEVER GOES AWAY"). No emojis.
+- SUBSCRIBE ASK (very important): the scene right BEFORE the answer/payoff scene must END with one quick, playful sentence of 4 to 9 words that contains the word "subscribe" and gives a reason tied to this video's answer, so viewers subscribe while they are still curious. Examples: "Subscribe, because the answer is wild." / "Quick, subscribe before I tell you!" / "Subscribe if you can guess it." Write a fresh one each time. It appears exactly once before the outro.
 - Scene 2 builds the suspense. The answer, with its number or main fact, lands in scene 3 or later, around the middle of the video.
 - Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part..."). The twist scene should be a compare, stat or orbit with a clear visual reveal, not a static row of icons.
-- Last scene MUST be type "outro" with narration exactly: "Like, share and subscribe to Brainy Bits for more weird facts!"
+- Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
@@ -117,8 +124,8 @@ ${emojiNames.join(', ')}`;
 }
 
 export const OUTRO = {
-  en: 'Like, share and subscribe to Brainy Bits for more weird facts!',
-  hi: 'ऐसे ही मज़ेदार फैक्ट्स के लिए ब्रेनी बिट्स को लाइक, शेयर और सब्सक्राइब करें!',
+  en: 'Subscribe to Brainy Bits for new weird facts every day!',
+  hi: 'हर दिन नए मज़ेदार फैक्ट्स के लिए ब्रेनी बिट्स को सब्सक्राइब करें!',
 };
 
 // Hindi channel: same rules, but everything the viewer hears or reads is in Hindi
@@ -131,6 +138,7 @@ LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a 
 - Write numbers in narration as Hindi words (for example "चालीस", "दो सौ"). On-screen "value" fields stay numbers.
 - The NO-NUMBERS rule for the hook still applies.
 - The outro narration must be exactly: "${OUTRO.hi}"
+- The SUBSCRIBE ASK sentence is in Hindi and must contain the word "सब्सक्राइब".
 - "tags" mix Hindi and English search words. "sources" stay in English.
 - "at", "dimAt" and "revealAt" must be one Hindi word copied exactly from that scene's narration.`;
 }

@@ -2,7 +2,7 @@ name: Brainy Bits factory
 
 on:
   schedule:
-    - cron: '30 0 * * *'   # every day 06:00 India time (GitHub can start it hours late) -> 3 Shorts
+    - cron: '30 0 * * *'   # every day 06:00 India time (GitHub can start it hours late) -> 4 Shorts + 1 long video
   workflow_dispatch:
     inputs:
       count:
@@ -11,6 +11,9 @@ on:
       topic:
         description: 'Optional topic for the first Short (leave empty = Brainy picks)'
         default: ''
+      long:
+        description: 'Also make the long video (1 = yes)'
+        default: '0'
 
 permissions:
   contents: write
@@ -57,11 +60,27 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PYTHON: python
-          COUNT: ${{ github.event.inputs.count || '3' }}
+          COUNT: ${{ github.event.inputs.count || '4' }}
           TOPIC: ${{ github.event.inputs.topic }}
           RENDER_CONCURRENCY: '100%'
           BRAINY_TTS: auto
         run: node factory/run.mjs --count "$COUNT" --topic "$TOPIC"
+
+      - name: Make the daily long video (3-4 minutes, 16:9)
+        # Monday, Wednesday and Saturday. Never blocks the Shorts: if it fails or runs out of time, the Shorts still upload.
+        if: github.event_name == 'schedule' || github.event.inputs.long == '1'
+        continue-on-error: true
+        timeout-minutes: 80
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHON: python
+          RENDER_CONCURRENCY: '100%'
+          BRAINY_TTS: auto
+        run: |
+          # long videos go out on Monday, Wednesday and Saturday (a manual run with long=1 always makes one)
+          DAY=$(date -u +%u)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY" != "1" ] && [ "$DAY" != "3" ] && [ "$DAY" != "6" ]; then echo "no long video today"; exit 0; fi
+          node factory/run.mjs --long
 
       - name: Remember used topics
         if: always()

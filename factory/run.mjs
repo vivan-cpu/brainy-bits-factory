@@ -31,6 +31,33 @@ const refurb = fs.existsSync(refurbFile) ? JSON.parse(fs.readFileSync(refurbFile
 const refurbQueue = refurb.videos.filter((v) => !v.made);
 const refurbTopic = (v) => `${v.title}. What the earlier version covered: ${v.description.replace(/#\w+/g, '').trim()}${v.duplicateOfPublic ? ` A public video titled "${v.title}" already exists, so take a fresh angle and use a different title.` : ''}`;
 
+// Learning loop: read the channel's public feed (latest 15 videos with view counts) and tell the script writer
+// which recent videos people watched most and least, so topics and titles drift toward what works.
+const CHANNEL_ID = process.env.YT_CHANNEL_ID || 'UCEKBQxcGl0NTb2zot5bxu1A';
+async function channelInsights() {
+  if (LANG !== 'en') return '';
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const res = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      const now = Date.now();
+      const vids = [...xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].map(([, e]) => ({
+        title: (e.match(/<title>([^<]+)/) || [])[1],
+        views: +((e.match(/views="(\d+)"/) || [])[1] || 0),
+        hours: (now - Date.parse((e.match(/<published>([^<]+)/) || [])[1])) / 3600000,
+      })).filter((v) => v.title && v.hours > 20); // a video needs about a day before its views mean anything
+      if (vids.length < 6) return '';
+      vids.sort((a, b) => b.views - a.views);
+      const line = (v) => `"${v.title.replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"')}" (${v.views} views)`;
+      return `Most watched recently: ${vids.slice(0, 4).map(line).join('; ')}. Least watched: ${vids.slice(-3).map(line).join('; ')}.`;
+    } catch (e) { await new Promise((r) => setTimeout(r, 3000)); }
+  }
+  return '';
+}
+const insights = await channelInsights();
+if (insights) log(`channel insights: ${insights}`);
+
 // map an unknown emoji to the closest allowed one (shared words), else a safe default
 function repairEmoji(name) {
   if (!name) return 'sparkles';
@@ -66,7 +93,7 @@ async function writeScript(category, topic, story = false) {
   const used = topic ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
   let feedback = '';
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story}), LANG));
+    const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story, insights}), LANG));
     const spec = repairSpec(json);
     const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
@@ -167,7 +194,14 @@ async function makeOne(i) {
     const qa = checkVideo(file, LONG ? {min: 120, max: 360, width: 1920, height: 1080} : undefined);
     if (!qa.problems.length) {
       log(`  QA passed: ${qa.duration.toFixed(1)}s, ${qa.meanVolume} dB`);
-      const meta = {id, file: path.basename(file), title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
+      let thumb;
+      if (LONG) { // custom thumbnail: the opening frame with the big title and the hero picture
+        try {
+          thumb = `${id}.jpg`;
+          run(npx, ['remotion', 'still', 'remotion/index.jsx', 'BrainyLong', path.join(ROOT, 'out', thumb), `--props=${path.join(ROOT, 'jobs', id, 'props.json')}`, '--frame=22', '--image-format=jpeg', '--jpeg-quality=90', '--log=error'], {cwd: ROOT});
+        } catch (e) { thumb = undefined; log(`  thumbnail skipped: ${e.message}`); }
+      }
+      const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
         category: spec.category, sources: spec.sources || [], duration: qa.duration, emojis: collectEmojis(spec)};
       fs.writeFileSync(path.join(ROOT, 'out', `${id}.json`), JSON.stringify(meta, null, 1));
       history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category});
