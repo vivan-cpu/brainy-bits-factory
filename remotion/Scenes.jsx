@@ -22,27 +22,42 @@ const Label = ({text, x, y, w = 360, size = 46, color = '#fff', style}) => text 
     lineHeight: 1.1, textShadow: '0 6px 22px rgba(0,0,0,.5)', ...style}}>{text}</div>
 ) : null;
 
-const HOOK_BADGES = {1: [[540, 330]], 2: [[330, 360], [750, 360]], 3: [[220, 400], [540, 290], [860, 400]]};
-export const hookBadgePos = (count, i = 0) => HOOK_BADGES[count][i];
+// where the opening's big subject settles, and where it stays for the whole hook scene
+export const HOOK_HERO = {x: 540, y: 610, size: 540};
+const HOOK_SIDES = [[190, 300], [890, 300]];
 
-// ---------- hook: badges arc above the big Brainy (Brainy itself is drawn by Video) ----------
+// ---------- hook: the subject stays big in the middle with question marks popping around it; extra items are side badges ----------
 export const Hook = ({scene, cue}) => {
   const f = useCurrentFrame();
   const items = (scene.items || []).slice(0, 3);
-  const pos = HOOK_BADGES[items.length] || [];
+  const at0 = cue(null, 0);
+  const g = f - at0;
+  const {x, y, size} = HOOK_HERO;
+  const marks = [[-330, -150, 150, -16, 6], [330, -190, 190, 14, 16], [-300, 210, 120, 10, 28], [310, 190, 140, -12, 40]];
   return (
     <AbsoluteFill>
-      {items.map((it, i) => {
-        // the first badge lands right as the opening's big subject flies into its place
-        const at = i === 0 ? cue(null, 0) : cue(it.at, 0.15 + i * 0.22);
+      <div style={{position: 'absolute', left: x - 800, top: y - 800, width: 1600, height: 1600, borderRadius: '50%', rotate: `${f * 0.9}deg`, opacity: g >= 0 ? 0.75 : 0,
+        background: 'repeating-conic-gradient(rgba(255,255,255,.13) 0deg 9deg, rgba(255,255,255,0) 9deg 24deg)',
+        maskImage: 'radial-gradient(circle, #000 16%, transparent 64%)', WebkitMaskImage: 'radial-gradient(circle, #000 16%, transparent 64%)'}} />
+      {marks.map(([dx, dy, sz, rot, delay], i) => {
+        const p = pop(f, at0 + 4 + delay, 9);
+        return <div key={i} style={{position: 'absolute', left: x + dx - sz / 2, top: y + dy - sz / 2, width: sz, textAlign: 'center', fontWeight: 800, fontSize: sz, lineHeight: 1, color: '#ffd54a',
+          textShadow: '0 10px 30px rgba(0,0,0,.45)', WebkitTextStroke: '8px rgba(8,16,40,.8)', paintOrder: 'stroke fill', opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.2, 1]),
+          rotate: `${rot + Math.sin((f + i * 11) / 12) * 7}deg`, translate: `0px ${Math.sin((f + i * 23) / 16) * 12}px`}}>?</div>;
+      })}
+      {items[0] && (
+        <Emoji name={items[0].emoji} size={size} style={{left: x - size / 2, top: y - size / 2, opacity: g >= 0 ? 1 : 0,
+          scale: 1 + Math.max(0, g) * 0.0009 + Math.sin(Math.max(0, g) / 9) * 0.025, translate: `0px ${Math.sin(Math.max(0, g) / 11) * 16}px`, rotate: `${Math.sin(Math.max(0, g) / 8) * 4}deg`}} />
+      )}
+      {items.slice(1).map((it, i) => {
+        const at = cue(it.at, 0.3 + i * 0.25);
         const p = pop(f, at);
-        const [x, y] = pos[i];
+        const [bx, by] = HOOK_SIDES[i];
         return (
-          <div key={i} style={{position: 'absolute', left: x - 120, top: y - 120, width: 240, height: 240, borderRadius: '50%',
-            background: 'rgba(255,255,255,.10)', border: '2px solid rgba(255,255,255,.22)', backdropFilter: 'blur(10px)',
-            boxShadow: '0 20px 50px rgba(0,0,0,.25)', opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.4, 1]),
-            translate: `0px ${Math.sin((f - at) / 22) * 8}px`}}>
-            <Emoji name={it.emoji} size={150} style={{left: 45, top: 45}} />
+          <div key={i} style={{position: 'absolute', left: bx - 110, top: by - 110, width: 220, height: 220, borderRadius: '50%',
+            background: 'rgba(255,255,255,.12)', border: '3px solid rgba(255,255,255,.28)', boxShadow: '0 20px 50px rgba(0,0,0,.25)',
+            opacity: fadeIn(p), scale: interpolate(p, [0, 1], [0.4, 1]), translate: `0px ${Math.sin((f - at) / 22) * 8}px`}}>
+            <Emoji name={it.emoji} size={140} style={{left: 40, top: 40}} />
           </div>
         );
       })}

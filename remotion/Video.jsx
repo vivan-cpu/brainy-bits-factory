@@ -4,7 +4,7 @@ import {loadFont} from '@remotion/google-fonts/Montserrat';
 import {loadFont as loadHindi} from '@remotion/google-fonts/Baloo2';
 import {World} from './Worlds.jsx';
 import {Brainy} from './Brainy.jsx';
-import {SCENES, FPS, FADE, Emoji, hookBadgePos} from './Scenes.jsx';
+import {SCENES, FPS, FADE, Emoji, HOOK_HERO} from './Scenes.jsx';
 
 export const {fontFamily} = loadFont('normal', {weights: ['700', '800'], subsets: ['latin']});
 const clamp = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'};
@@ -34,15 +34,15 @@ const HERO = 700; // px, the subject's size during the opening
 const HERO_Y = 590;
 
 // First 1.6s: the subject already fills the screen and moves on frame one, with the teaser as the only text.
-// It then flies up and becomes the first badge of the hook scene, so Brainy never appears on top of it.
-const HookOpening = ({text, hero, badges}) => {
+// It then settles into the middle of the hook scene and stays big there, so the screen never goes empty in the first seconds.
+const HookOpening = ({text, hero}) => {
   const f = useCurrentFrame();
   if (!text || f > HOOK_FRAMES + 8) return null;
   const leave = interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 6], [0, 1], {...clamp, easing: ease});
-  const [bx, by] = hookBadgePos(badges);
+  const {x: bx, y: by, size: endSize} = HOOK_HERO;
   const punch = interpolate(spring({frame: f, fps: FPS, config: {damping: 10, stiffness: 200, mass: 0.6}}), [0, 1], [1.22, 1]);
   const push = interpolate(f, [0, HOOK_FRAMES], [1, 1.1], clamp);
-  const heroScale = punch * push * interpolate(leave, [0, 1], [1, 150 / HERO]);
+  const heroScale = punch * push * interpolate(leave, [0, 1], [1, endSize / HERO]);
   const titleP = spring({frame: f, fps: FPS, config: {damping: 9, stiffness: 220, mass: 0.7}});
   const titleOut = interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 2], [1, 0], clamp);
   const shake = f < 10 ? Math.sin(f * 2.2) * (10 - f) * 1.2 : 0;
@@ -59,7 +59,7 @@ const HookOpening = ({text, hero, badges}) => {
         scale: interpolate(ring, [0, 1], [0.5, 1.5]), opacity: interpolate(ring, [0, 1], [0.9, 0])}} />
       {hero && (
         <div style={{position: 'absolute', width: HERO, height: HERO, left: interpolate(leave, [0, 1], [540, bx]) - HERO / 2, top: interpolate(leave, [0, 1], [HERO_Y, by]) - HERO / 2,
-          scale: heroScale, opacity: interpolate(leave, [0.85, 1], [1, 0], clamp),
+          scale: heroScale, opacity: f >= HOOK_FRAMES ? 0 : 1,
           translate: `0px ${Math.sin(f / 7) * 16 * (1 - leave)}px`, rotate: `${Math.sin(f / 5) * 5 * (1 - leave)}deg`}}>
           <Emoji name={hero} size={HERO} />
         </div>
@@ -87,10 +87,10 @@ const BrainyLayer = ({spec, timing}) => {
   const t = f / FPS;
   const k = Math.max(0, timing.scenes.findLastIndex((s) => t >= s.start - 0.25));
   const type = spec.scenes[k]?.type;
-  const bigNow = type === 'hook' || type === 'outro';
+  const bigNow = type === 'outro' || (type === 'hook' && !spec.hookText); // with an opening, the subject owns the hook and Brainy starts in his corner
   const sStart = Math.round((timing.scenes[k]?.start ?? 0) * FPS);
   const prevType = spec.scenes[k - 1]?.type;
-  const bigPrev = k === 0 ? bigNow : prevType === 'hook' || prevType === 'outro';
+  const bigPrev = k === 0 ? bigNow : prevType === 'outro' || (prevType === 'hook' && !spec.hookText);
   const p = k === 0 ? 1 : spring({frame: f - sStart + 8, fps: FPS, config: {damping: 16, stiffness: 120}});
   const big = interpolate(p, [0, 1], [bigPrev ? 1 : 0, bigNow ? 1 : 0]);
   const outro = type === 'outro';
@@ -192,7 +192,7 @@ export const Video = ({jobId, spec, timing}) => {
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
-      <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} badges={Math.min(spec.scenes[0]?.items?.length || 1, 3)} />
+      <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />
       <Captions timing={timing} hideUntil={spec.hookText ? HOOK_FRAMES + 4 : 0} />
       <SubscribeNudge timing={timing} />
       <Music total={durationFor(timing)} />

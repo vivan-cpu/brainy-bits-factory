@@ -28,7 +28,7 @@ async function upload(token, meta, publishAt) {
   const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
     method: 'POST',
     headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8', 'x-upload-content-type': 'video/mp4', 'x-upload-content-length': String(size)},
-    body: JSON.stringify({snippet: {title: meta.title.slice(0, 100), description, tags: (meta.tags || []).slice(0, 15), categoryId: '27', defaultLanguage: 'en'}, status}),
+    body: JSON.stringify({snippet: {title: meta.title.slice(0, 100), description, tags: (meta.tags || []).slice(0, 15), categoryId: '27', defaultLanguage: 'en', defaultAudioLanguage: 'en'}, status}),
   });
   if (!init.ok) throw new Error(`upload init failed: HTTP ${init.status} ${(await init.text()).slice(0, 300)}`);
   const put = await fetch(init.headers.get('location'), {method: 'PUT', headers: {'content-type': 'video/mp4', 'content-length': String(size)}, body: fs.readFileSync(file)});
