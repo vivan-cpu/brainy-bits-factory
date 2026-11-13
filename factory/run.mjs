@@ -83,6 +83,7 @@ function repairSpec(spec) {
   const last = spec.scenes[spec.scenes.length - 1];
   if (last?.type === 'outro') last.narration = OUTRO[LANG] || OUTRO.en;
   spec.lang = LANG;
+  spec.opening = history.length % 2 ? 'slam' : 'hero'; // two opening styles alternate, so their "stayed to watch" numbers can be compared
   if (!spec.hookText) spec.hookText = String(spec.title || '').split(/\s+/).slice(0, 4).join(' ');
   spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{M}\p{N}\s?!'%-]/gu, '').split(/\s+/).slice(0, 5).join(' ');
   if (!['ocean', 'space', 'body', 'lab', 'sky', 'forest'].includes(spec.world)) spec.world = 'lab';
@@ -201,10 +202,10 @@ async function makeOne(i) {
           run(npx, ['remotion', 'still', 'remotion/index.jsx', 'BrainyLong', path.join(ROOT, 'out', thumb), `--props=${path.join(ROOT, 'jobs', id, 'props.json')}`, '--frame=22', '--image-format=jpeg', '--jpeg-quality=90', '--log=error'], {cwd: ROOT});
         } catch (e) { thumb = undefined; log(`  thumbnail skipped: ${e.message}`); }
       }
-      const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
+      const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, opening: spec.opening, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
         category: spec.category, sources: spec.sources || [], duration: qa.duration, emojis: collectEmojis(spec)};
       fs.writeFileSync(path.join(ROOT, 'out', `${id}.json`), JSON.stringify(meta, null, 1));
-      history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category});
+      history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category, opening: LONG ? undefined : spec.opening});
       fs.writeFileSync(historyFile, JSON.stringify(history, null, 1));
       if (remake) { remake.made = true; fs.writeFileSync(refurbFile, JSON.stringify(refurb, null, 1)); }
       return meta;

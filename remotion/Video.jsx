@@ -74,6 +74,43 @@ const HookOpening = ({text, hero}) => {
   );
 };
 
+// Opening style "slam": the teaser words hit the top of the screen one by one, each with a flash, while the subject shakes below.
+// Used on every second video so the two openings can be compared in YouTube's "stayed to watch" numbers.
+const SlamOpening = ({text, hero}) => {
+  const f = useCurrentFrame();
+  if (!text || f > HOOK_FRAMES + 8) return null;
+  const leave = interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 6], [0, 1], {...clamp, easing: ease});
+  const {x: bx, y: by, size: endSize} = HOOK_HERO;
+  const words = String(text).toUpperCase().split(/\s+/);
+  const longest = Math.max(...words.map((w) => w.length), 4);
+  const size = Math.min(230, Math.floor(1180 / longest), Math.floor(760 / words.length));
+  const step = Math.max(4, Math.min(8, Math.floor(26 / words.length)));
+  const lastHit = (words.length - 1) * step;
+  const flash = Math.max(...words.map((_, i) => interpolate(f - i * step, [0, 1, 6], [0, 0.5, 0], clamp)));
+  const HS = 620, HY = 1180;
+  const jolt = words.reduce((a, _, i) => a + (f - i * step >= 0 && f - i * step < 6 ? (6 - (f - i * step)) * 5 : 0), 0);
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={{background: '#fff', opacity: flash}} />
+      <div style={{position: 'absolute', left: 40, right: 40, top: 150, textAlign: 'center', fontWeight: 800, fontSize: size, lineHeight: 1.0, letterSpacing: -4,
+        opacity: interpolate(f, [HOOK_FRAMES - 6, HOOK_FRAMES + 2], [1, 0], clamp)}}>
+        {words.map((w, i) => {
+          const p = spring({frame: f - i * step, fps: FPS, config: {damping: 9, stiffness: 260, mass: 0.6}});
+          return <div key={i} style={{color: i === words.length - 1 ? '#ffd54a' : '#fff', opacity: f >= i * step ? 1 : 0, scale: interpolate(p, [0, 1], [2.4, 1]),
+            rotate: `${(i % 2 ? 1.5 : -1.5)}deg`, textShadow: '0 14px 44px rgba(0,0,0,.6)', WebkitTextStroke: '12px rgba(8,16,40,.85)', paintOrder: 'stroke fill'}}>{w}</div>;
+        })}
+      </div>
+      {hero && (
+        <div style={{position: 'absolute', width: HS, height: HS, left: interpolate(leave, [0, 1], [540, bx]) - HS / 2, top: interpolate(leave, [0, 1], [HY, by]) - HS / 2,
+          scale: interpolate(leave, [0, 1], [1 + (f > lastHit ? Math.sin((f - lastHit) / 3) * 0.03 : 0), endSize / HS]), opacity: f >= HOOK_FRAMES ? 0 : 1,
+          translate: `${Math.sin(f * 2.3) * jolt * (1 - leave)}px ${Math.sin(f / 6) * 12 * (1 - leave)}px`, rotate: `${Math.sin(f / 4) * 6 * (1 - leave)}deg`}}>
+          <Emoji name={hero} size={HS} />
+        </div>
+      )}
+    </AbsoluteFill>
+  );
+};
+
 export const SceneWrap = ({dur, first, last, children}) => {
   const f = useCurrentFrame();
   const a = first ? 1 : interpolate(f, [0, FADE * 2], [0, 1], clamp);
@@ -192,7 +229,9 @@ export const Video = ({jobId, spec, timing}) => {
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
-      <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />
+      {spec.opening === 'slam'
+        ? <SlamOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />
+        : <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />}
       <Captions timing={timing} hideUntil={spec.hookText ? HOOK_FRAMES + 4 : 0} />
       <SubscribeNudge timing={timing} />
       <Music total={durationFor(timing)} />
