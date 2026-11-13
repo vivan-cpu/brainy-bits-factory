@@ -77,6 +77,7 @@ export function scriptPrompt({category, topic, used, emojiNames, feedback, story
 TASK: ${topic ? `Write a script about: "${topic}".` : story ? `Tell ONE gripping, TRUE, well-documented story in the theme "${category}": a real event, person or animal with a clear beginning, a problem, a turning point and a surprising ending.` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
 ${story ? `STORY RULES (this video is a true story, not a list of facts)
 - Follow one main character (a named person, animal, ship or place) through the event, in time order.
+- Keep it family-friendly and uplifting or funny: this is a playful cartoon channel. Do NOT pick stories centred on mass death or atrocities (atomic bombings, genocides, terror attacks, deadly disasters, murders). Rescues, clever escapes, lucky accidents, animal heroes, strange coincidences and explorers are ideal.
 - Every scene must make the viewer want the next one: end scenes on a question, a danger or a "but".
 - The ending is the payoff: the surprising outcome or twist lands in the last scene before the outro.
 - Stick to what reliable sources say happened. Never invent dialogue, names, numbers or details. If something is uncertain, say "historians think" or "reportedly".
