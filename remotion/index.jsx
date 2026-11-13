@@ -2,6 +2,7 @@ import React from 'react';
 import {registerRoot, Composition} from 'remotion';
 import {Video, durationFor} from './Video.jsx';
 import {LongVideo} from './LongVideo.jsx';
+import {Banner, Logo} from './Brand.jsx';
 import sample from '../data/sample-props.json';
 
 const Root = () => (
@@ -26,6 +27,8 @@ const Root = () => (
       defaultProps={sample}
       calculateMetadata={({props}) => ({durationInFrames: durationFor(props.timing)})}
     />
+    <Composition id="Banner" component={Banner} fps={30} width={2560} height={1440} durationInFrames={1} />
+    <Composition id="Logo" component={Logo} fps={30} width={800} height={800} durationInFrames={1} />
   </>
 );
 
