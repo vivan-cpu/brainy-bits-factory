@@ -184,5 +184,39 @@
   "topic": "Alexei Leonov spacewalk",
   "title": "The astronaut who got stuck outside his ship",
   "category": "space missions"
+ },
+ {
+  "date": "2026-11-14",
+  "topic": "Sun's mass dominance",
+  "title": "The Sun is a cosmic heavyweight",
+  "category": "space",
+  "opening": "slam"
+ },
+ {
+  "date": "2026-11-14",
+  "topic": "T-Rex and Stegosaurus timeline",
+  "title": "A T-Rex lived closer to us than Stegosaurus",
+  "category": "dinosaurs and fossils",
+  "opening": "hero"
+ },
+ {
+  "date": "2026-11-14",
+  "topic": "Sharks are older than trees",
+  "title": "Sharks are more ancient than trees",
+  "category": "earth and nature",
+  "opening": "slam"
+ },
+ {
+  "date": "2026-11-14",
+  "topic": "Pelorus Jack the dolphin pilot",
+  "title": "A dolphin named Pelorus Jack guided ships for 24 years",
+  "category": "ocean and shipwreck mysteries",
+  "opening": "hero"
+ },
+ {
+  "date": "2026-11-14",
+  "topic": "Strange Ocean Survivors",
+  "title": "6 Ocean Animals That Break the Rules of Biology",
+  "category": "ocean life"
  }
 ]
