@@ -218,5 +218,26 @@
   "topic": "Strange Ocean Survivors",
   "title": "6 Ocean Animals That Break the Rules of Biology",
   "category": "ocean life"
+ },
+ {
+  "date": "2026-11-15",
+  "topic": "baby bone fusion",
+  "title": "The secret puzzle inside every human baby",
+  "category": "human body",
+  "opening": "hero"
+ },
+ {
+  "date": "2026-11-15",
+  "topic": "Astronaut footprints",
+  "title": "How long astronaut footprints stay on the Moon",
+  "category": "space",
+  "opening": "slam"
+ },
+ {
+  "date": "2026-11-15",
+  "topic": "Bobbie the Wonder Dog",
+  "title": "Bobbie the Dog Walked 4100 Km Back Home",
+  "category": "record-breaking journeys",
+  "opening": "hero"
  }
 ]
