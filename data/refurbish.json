@@ -101,7 +101,7 @@
    "deletedId": "2UnTY1H9yBo",
    "duplicateOfPublic": true,
    "publicId": "A-Pq0PftxxU",
-   "made": false,
+   "made": true,
    "topic": "Stomach acid power",
    "category": "science",
    "title": "Your stomach acid can dissolve metal",
@@ -110,7 +110,8 @@
     "Scientific American",
     "Britannica",
     "Healthline"
-   ]
+   ],
+   "dropped": "child safety: a public version already exists"
   },
   {
    "deletedId": "XuaqVyyr4hY",

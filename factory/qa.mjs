@@ -30,7 +30,7 @@ export function checkSpec(spec, emojiSet) {
   if (sc.length < 4 || sc.length > 8) problems.push(`scene count ${sc.length}`);
   if (sc[0]?.type !== 'hook') problems.push('first scene is not a hook');
   if (!sc[0]?.items?.length) problems.push('hook needs at least one item: its first emoji fills the screen in the opening');
-  problems.push(...hookProblems(spec), ...askProblems(spec));
+  problems.push(...claimProblems(spec), ...askProblems(spec));
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
@@ -57,6 +57,28 @@ function askProblems(spec) {
   if (mid.length !== 1) return [`${mid.length} middle scenes contain a subscribe ask: exactly one is required, right before the answer`];
   // the ask rides on the end of a real story sentence; a scene that is only the ask stalls the video
   return (mid[0].narration || '').split(/\s+/).length < 11 ? ['the subscribe ask must be the LAST sentence of a normal scene that first says something about the topic, not a scene on its own'] : [];
+}
+
+// Shorts: the hook states the claim and names the subject (vague teases made 4 out of 5 viewers swipe away)
+const VAGUE = /^(did you know|have you ever|in this video|today|hey guys)|\b(secret|mystery|you won'?t believe|something (strange|weird|amazing))\b/i;
+const STOP = new Set(['this', 'that', 'than', 'with', 'from', 'have', 'they', 'their', 'your', 'about', 'what', 'when', 'were', 'will', 'into', 'most', 'more', 'ever', 'never', 'does', 'every', 'which', 'there', 'these', 'those', 'actually', 'really', 'just', 'been', 'being', 'make', 'makes', 'made', 'only', 'over', 'very', 'much', 'many', 'some', 'here', 'why', 'how', 'the', 'and', 'are', 'was', 'has', 'can', 'for', 'its', 'you', 'not', 'one', 'who']);
+const keywords = (t) => String(t || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w)).map((w) => w.replace(/(es|s)$/, ''));
+function claimProblems(spec) {
+  const out = [];
+  const hook = String(spec.scenes?.[0]?.narration || '');
+  const head = String(spec.hookText || '').trim().split(/\s+/).filter(Boolean);
+  if (head.length < 2 || head.length > 6) out.push('hookText must be 3 to 6 words');
+  if (head.some((w) => w.length > 13)) out.push('hookText has a word longer than 12 letters: use shorter words');
+  if (hook.split(/\s+/).length > 17) out.push('hook narration is too long: one sentence of 6 to 14 words');
+  if (VAGUE.test(hook) || VAGUE.test(spec.hookText || '')) out.push('the hook is a vague tease: state the surprising claim itself and name the subject');
+  if (spec.lang !== 'hi') { // the headline and the first sentence must both be about the subject named in the title
+    const subject = new Set([...keywords(spec.title), ...keywords(spec.topic)]);
+    if (!keywords(spec.hookText).some((w) => subject.has(w))) out.push('hookText does not name the subject of the video (it shares no word with the title or topic)');
+    if (!keywords(hook).some((w) => subject.has(w))) out.push('the hook sentence does not name the subject of the video');
+    const named = keywords(spec.photo?.subject);
+    if (named.length && !named.some((w) => keywords(spec.title).includes(w))) out.push(`the title does not name the subject: it must contain "${named.join('" or "')}" instead of a vague word like "this animal"`);
+  }
+  return out;
 }
 
 function hookProblems(spec) {

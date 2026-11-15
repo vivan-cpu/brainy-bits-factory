@@ -6,6 +6,7 @@ import {askJSON} from './gemini.mjs';
 import {CATEGORIES, STORY_CATEGORIES, OUTRO, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
 import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
+import {findPhoto} from './photo.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
 const arg = (name, def) => { const i = process.argv.indexOf(`--${name}`); return i > -1 ? process.argv[i + 1] : def; };
@@ -80,12 +81,20 @@ function repairSpec(spec) {
     if (s.left) s.left.emoji = repairEmoji(s.left.emoji);
     if (s.right) s.right.emoji = repairEmoji(s.right.emoji);
   }
+  // a subscribe ask written as its own tiny scene stalls the video: fold it into the end of the scene before it
+  if (!LONG) {
+    const k = spec.scenes.findIndex((s, i) => i >= 2 && i < spec.scenes.length - 1 && /subscri|सब्सक्राइब/i.test(s.narration || '') && String(s.narration).split(/\s+/).length < 11);
+    if (k > 0 && spec.scenes.length > 5) {
+      spec.scenes[k - 1].narration = `${String(spec.scenes[k - 1].narration).trim()} ${String(spec.scenes[k].narration).trim()}`;
+      spec.scenes.splice(k, 1);
+    }
+  }
   const last = spec.scenes[spec.scenes.length - 1];
   if (last?.type === 'outro') last.narration = OUTRO[LANG] || OUTRO.en;
   spec.lang = LANG;
   spec.opening = history.length % 2 ? 'slam' : 'hero'; // two opening styles alternate, so their "stayed to watch" numbers can be compared
   if (!spec.hookText) spec.hookText = String(spec.title || '').split(/\s+/).slice(0, 4).join(' ');
-  spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{M}\p{N}\s?!'%-]/gu, '').split(/\s+/).slice(0, 5).join(' ');
+  spec.hookText = String(spec.hookText).replace(/[^\p{L}\p{M}\p{N}\s?!'%.,-]/gu, '').trim().split(/\s+/).slice(0, LONG ? 5 : 6).join(' ');
   if (!['ocean', 'space', 'body', 'lab', 'sky', 'forest'].includes(spec.world)) spec.world = 'lab';
   return spec;
 }
@@ -186,6 +195,22 @@ async function makeOne(i) {
   log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
   const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
+  if (!LONG && process.env.NO_PHOTO !== '1') { // a real photo of the subject opens the Short; without one the cartoon opening is used
+    const want = spec.photo || {};
+    let found = null;
+    log(`  photo wanted: ${want.subject || spec.topic} [${(want.queries || []).join(' | ')}]`);
+    let timer;
+    try { // never let the photo hold up the video: after 3 minutes the cartoon opening is used
+      found = await Promise.race([
+        findPhoto({subject: want.subject || spec.topic, queries: [...(Array.isArray(want.queries) ? want.queries : []), want.subject].filter(Boolean), dir: path.join(ROOT, 'public/jobs', id), log}),
+        new Promise((res) => { timer = setTimeout(() => { log('  photo: took too long, using the cartoon opening'); res(null); }, 180000); }),
+      ]);
+    }
+    catch (e) { log(`  photo skipped: ${e.message}`); }
+    finally { clearTimeout(timer); }
+    spec.photo = found || undefined;
+    if (found) spec.opening = 'photo';
+  } else delete spec.photo;
   fs.writeFileSync(path.join(ROOT, 'jobs', id, 'spec.json'), JSON.stringify(spec, null, 1));
   log('  voice…');
   const timing = buildVoice(spec, id);
@@ -202,7 +227,7 @@ async function makeOne(i) {
           run(npx, ['remotion', 'still', 'remotion/index.jsx', 'BrainyLong', path.join(ROOT, 'out', thumb), `--props=${path.join(ROOT, 'jobs', id, 'props.json')}`, '--frame=22', '--image-format=jpeg', '--jpeg-quality=90', '--log=error'], {cwd: ROOT});
         } catch (e) { thumb = undefined; log(`  thumbnail skipped: ${e.message}`); }
       }
-      const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, opening: spec.opening, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
+      const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, opening: spec.opening, credit: spec.photo?.credit, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
         category: spec.category, sources: spec.sources || [], duration: qa.duration, emojis: collectEmojis(spec)};
       fs.writeFileSync(path.join(ROOT, 'out', `${id}.json`), JSON.stringify(meta, null, 1));
       history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category, opening: LONG ? undefined : spec.opening});

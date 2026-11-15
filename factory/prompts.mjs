@@ -91,15 +91,18 @@ ${insights ? `WHAT THIS CHANNEL'S VIEWERS WATCH (real view counts): ${insights} 
 
 HARD RULES
 - Facts must be accurate and supported by mainstream sources (NASA, Britannica, National Geographic, Smithsonian, peer-reviewed science). No myths, no rounded-up exaggerations, hedge with "about"/"up to" when values vary.
+- Child safety: many viewers are children. Never pick or phrase a fact so that copying it could hurt someone (swallowing objects or chemicals, fire, electricity, holding breath, dangerous stunts, dieting or medical advice). If a topic touches this, tell it as something that happens in nature or in a lab, and never as something the viewer could try.
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
 - The title must be literally true and fully delivered by the script. It must NAME the subject (the animal, person, object or event) in plain words so a stranger knows what the video is about, and add one curiosity gap. Bad (vague): "The snack that changed history". Good: "A melted chocolate bar invented the microwave".
 - ${story ? '6 to 8 scenes. Total narration 86 to 116 words (36 to 46 seconds spoken).' : '5 to 7 scenes. Total narration 66 to 92 words (26 to 34 seconds spoken).'}
-- Scene 1 MUST be type "hook" and must stop the scroll in the first 2 seconds: ONE short, bold sentence (6-14 words) that TEASES the fact and makes the viewer need the answer. It must NOT give the answer: no numbers, no measurements and no statement of the main fact. Make it concrete and specific. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (gives it away): "A sloth can hold its breath four times longer than a dolphin." Good (teases): "This sleepy animal beats a dolphin at one thing." / "Astronauts left something on the Moon that won't go away." Only the first item in the hook is required; up to 3 badges tease what's coming, and they must not reveal the answer either.
+- Scene 1 MUST be type "hook" and must stop the scroll in the first second: ONE short, bold sentence (6-14 words) that says the single most surprising TRUE claim of the video straight away and NAMES the subject in plain words, so a stranger instantly knows what this is about and thinks "no way, how?". Numbers are welcome. Viewers swipe away from vague teases, so NEVER write one. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (vague, nobody knows what it is about): "There is a massive secret about our neighborhood." / "This sleepy animal beats a dolphin at one thing." Good (the claim itself): "A T-Rex lived closer in time to you than to a Stegosaurus." / "This shrimp punches so fast that the water around it boils." / "A sloth can hold its breath longer than a dolphin."${story ? ' For a story, the hook says who or what it is about and the most unbelievable true thing that happened, but it keeps the ending for later.' : ''} Only the first item in the hook is required; up to 3 badges show related things.
 - The FIRST item of the hook scene is shown huge on screen from the very first frame. It must be the most literal emoji of the main subject (the animal, object or body part the video is about).
-- "hookText": 2-5 punchy words shown huge on screen in the first second, and the only text on screen at that moment. It must tease, not answer, and must not contain a number (for example "IT BEATS A DOLPHIN" or "IT NEVER GOES AWAY"). No emojis.
-- SUBSCRIBE ASK (very important): the scene right BEFORE the answer/payoff scene must END with one quick, playful sentence of 4 to 9 words that contains the word "subscribe" and gives a reason tied to this video's answer, so viewers subscribe while they are still curious. Examples: "Subscribe, because the answer is wild." / "Quick, subscribe before I tell you!" / "Subscribe if you can guess it." Write a fresh one each time. It appears exactly once before the outro.
-- Scene 2 builds the suspense. The answer, with its number or main fact, lands in scene 3 or later, around the middle of the video.
-- Keep the energy high: short sentences, vivid verbs, at least one surprising twist in the middle ("But here's the crazy part..."). The twist scene should be a compare, stat or orbit with a clear visual reveal, not a static row of icons.
+- "hookText": 3-6 words shown huge over a real photo in the first second, and the only text on screen at that moment. It is the hook's claim squeezed into a headline that NAMES the subject, for example "T-REX NEVER MET STEGOSAURUS", "THIS SHRIMP BOILS WATER", "OCTOPUSES HAVE 3 HEARTS". Never a vague phrase like "TOTAL SPACE DOMINATION" or "IT NEVER GOES AWAY". No emojis, no word longer than 12 letters.
+- "photo": what a REAL photograph for the opening should show. "subject" is the main subject in 2-6 plain English words ("a peacock mantis shrimp"). "queries" are 2 or 3 short search phrases for Wikimedia Commons, best first: the common name, then the scientific or more specific name ("mantis shrimp", "Odontodactylus scyllarus"). Pick something that can really be photographed: the animal, object, planet, place, machine or body part. For a story about a person, use the animal, ship, place or object of the story, never a private or living person.
+- SUBSCRIBE ASK (very important): the scene right BEFORE the final twist scene must END with one quick, playful sentence of 4 to 9 words that contains the word "subscribe" and gives a reason tied to this video's answer, so viewers subscribe while they are still curious. Examples: "Subscribe, because the answer is wild." / "Quick, subscribe before I tell you!" / "Subscribe if you can guess it." Write a fresh one each time. It appears exactly once before the outro. It is NEVER a scene of its own: it is the last sentence inside a normal scene that first says 8 or more words about the topic.
+- Scene 2 says why the claim sounds impossible, or asks the "how?" the viewer is thinking. The middle scenes then prove and explain it with concrete numbers.
+- SAVE ONE FINAL TWIST: the last scene before the outro delivers an even stranger related fact that the hook did not mention ("And the craziest part..."). That is the payoff viewers stay for. It should be a compare, stat, bars or bigword scene with a clear visual reveal, not a static row of icons.
+- Keep the energy high: short sentences, vivid verbs, no filler.
 - Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey, bars, timeline, bigword, and no more than one trio. Prefer the type that SHOWS the fact: bars for comparing amounts, timeline for a sequence, bigword for the shock line. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
@@ -113,7 +116,8 @@ ${SCENE_TYPES}
 OUTPUT exactly one JSON object:
 {
  "topic": "short topic name",
- "hookText": "2-5 WORD HOOK",
+ "hookText": "3-6 WORD HEADLINE OF THE CLAIM",
+ "photo": {"subject": "...", "queries": ["...", "..."]},
  "category": "${category}",
  "world": "...",
  "title": "curious YouTube title, max 60 characters, no emojis",
@@ -140,7 +144,7 @@ export function withLanguage(prompt, lang) {
 LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a HINDI channel.
 - Every "narration", "hookText", "title", "description", "label", "big" text and chapter "title" is in natural, simple, spoken Hindi written in Devanagari script, the way a friendly Indian YouTuber talks. Common English words that Indians say in Hindi (science, planet, record, battery) are fine, written in Devanagari.
 - Write numbers in narration as Hindi words (for example "चालीस", "दो सौ"). On-screen "value" fields stay numbers.
-- The NO-NUMBERS rule for the hook still applies.
+- "photo" (its subject and queries) stays in English. No hookText word may be longer than 12 letters.
 - The outro narration must be exactly: "${OUTRO.hi}"
 - The SUBSCRIBE ASK sentence is in Hindi and must contain the word "सब्सक्राइब".
 - "tags" mix Hindi and English search words. "sources" stay in English.
@@ -149,8 +153,9 @@ LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a 
 
 export function factCheckPrompt(spec) {
   const lines = spec.scenes.map((s, i) => `${i + 1}. ${s.narration}${s.type === 'stat' ? ` [on screen: ${s.prefix || ''}${s.value}${s.suffix || ''} ${s.label || ''}]` : ''}${s.type === 'compare' ? ` [on screen: ${s.left?.big} ${s.left?.label} vs ${s.right?.big} ${s.right?.label}]` : ''}${s.type === 'bars' ? ` [on screen bar chart: ${(s.bars || []).map((b) => `${b.label} ${b.value}${s.unit || ''}`).join(', ')}]` : ''}${s.type === 'timeline' ? ` [on screen timeline: ${(s.steps || []).map((b) => `${b.when} ${b.label}`).join(', ')}]` : ''}${s.type === 'bigword' ? ` [on screen: ${s.text}]` : ''}`).join('\n');
-  return `You are a strict fact-checker for an educational YouTube Shorts channel. Check every factual claim in this script, including on-screen numbers.
+  return `You are a strict fact-checker for an educational YouTube Shorts channel. Check every factual claim in this script, including on-screen numbers and the opening headline.
 Topic: ${spec.topic}
+Opening headline shown on screen: ${spec.hookText || '(none)'}
 Script:
 ${lines}
 Title: ${spec.title}

@@ -111,6 +111,82 @@ const SlamOpening = ({text, hero}) => {
   );
 };
 
+// Opening style "photo": a real photograph of the subject fills the phone screen from frame one, with the claim slammed over it.
+// After two seconds the photo shrinks into a tilted card that stays up for the rest of the hook scene, so the cartoon takes over smoothly.
+// (A cartoon picture on a plain background made 4 out of 5 viewers swipe away at once; a real photo says "this is about a real thing".)
+export const PHOTO_FRAMES = 60;
+export const openFrames = (spec) => (spec?.photo ? PHOTO_FRAMES : HOOK_FRAMES);
+const lerp = (t, a, b) => a + (b - a) * t;
+
+const hookLines = (text, max = 11) => {
+  const lines = [];
+  for (const w of String(text).toUpperCase().split(/\s+/).filter(Boolean)) {
+    const last = lines[lines.length - 1];
+    if (last && (last.join(' ') + ' ' + w).length <= max) last.push(w);
+    else lines.push([w]);
+  }
+  return lines;
+};
+
+const PhotoOpening = ({jobId, spec, hookEnd}) => {
+  const f = useCurrentFrame();
+  const ph = spec.photo;
+  if (!ph || f > hookEnd + FADE) return null;
+  const src = staticFile(`jobs/${jobId}/${ph.file}`);
+  const leave = interpolate(f, [PHOTO_FRAMES - 8, PHOTO_FRAMES + 8], [0, 1], {...clamp, easing: ease}); // 0 = full screen, 1 = card
+  const out = interpolate(f, [hookEnd - FADE, hookEnd + FADE], [1, 0], clamp);
+  const cover = ph.fit === 'cover';
+  const asp = Math.max(0.6, Math.min(2.3, ph.aspect || 1.5));
+  const A = cover ? {w: 1080, h: 1920, cy: 960} : {w: 1080, h: 1180, cy: 590}; // wide photos fill the top 60% (sides cropped a little), text sits below
+  const B = cover ? (asp < 0.9 ? {w: 700, h: 880, cy: 650} : {w: 800, h: 800, cy: 640}) : {w: 900, h: 900 / asp, cy: 640};
+  const w = lerp(leave, A.w, B.w), h = lerp(leave, A.h, B.h), cy = lerp(leave, A.cy, B.cy);
+  const punch = interpolate(spring({frame: f, fps: FPS, config: {damping: 11, stiffness: 190, mass: 0.6}}), [0, 1], [1.2, 1]);
+  const zoom = punch * interpolate(f, [0, PHOTO_FRAMES, hookEnd], [1.08, 1.2, 1.26], clamp);
+  const lines = hookLines(spec.hookText || '');
+  const all = lines.flat();
+  const longest = Math.max(...lines.map((l) => l.join(' ').length), 4);
+  const top = cover ? 880 : 1120, bottom = 1570;
+  const size = Math.floor(Math.min(200, 930 / (0.66 * longest), (bottom - top) / (lines.length * 1.04)));
+  const step = Math.max(3, Math.min(6, Math.floor(22 / Math.max(1, all.length))));
+  const hasDigit = all.some((x) => /\p{Nd}/u.test(x)); // also Devanagari digits
+  const hit = all.reduce((a, _, i) => a + (f - i * step >= 0 && f - i * step < 5 ? (5 - (f - i * step)) * 2.2 : 0), 0);
+  let n = -1;
+  return (
+    <AbsoluteFill style={{opacity: out}}>
+      {!cover && (
+        <AbsoluteFill style={{opacity: 1 - leave, overflow: 'hidden', background: '#060a18'}}>
+          <Img src={src} style={{width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(38px) brightness(.42) saturate(1.25)', scale: 1.3}} />
+        </AbsoluteFill>
+      )}
+      <div style={{position: 'absolute', left: 540 - w / 2, top: cy - h / 2, width: w, height: h, overflow: 'hidden', borderRadius: lerp(leave, 0, 56),
+        boxShadow: `0 0 0 ${lerp(leave, 0, 12)}px #fff, 0 40px 90px rgba(0,0,0,${0.5 * leave})`,
+        rotate: `${leave * (-2.5 + Math.sin(f / 22) * 1.2)}deg`, translate: `${Math.sin(f * 2.1) * hit * (1 - leave)}px ${leave * Math.sin(f / 15) * 10}px`}}>
+        <Img src={src} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${(ph.fx ?? 0.5) * 100}% ${(ph.fy ?? 0.45) * 100}%`,
+          scale: zoom, transformOrigin: `${(ph.fx ?? 0.5) * 100}% ${(ph.fy ?? 0.45) * 100}%`}} />
+      </div>
+      <AbsoluteFill style={{opacity: 1 - leave, background: cover
+        ? 'linear-gradient(to bottom, rgba(4,10,30,.4) 0%, rgba(4,10,30,0) 20%, rgba(4,10,30,0) 40%, rgba(4,10,30,.86) 76%, rgba(4,10,30,.9) 100%)'
+        : 'linear-gradient(to bottom, rgba(4,10,30,.3) 0%, rgba(4,10,30,0) 16%, rgba(4,10,30,0) 44%, rgba(4,10,30,.93) 60%, rgba(4,10,30,.93) 100%)'}} />
+      <AbsoluteFill style={{background: '#fff', opacity: interpolate(f, [0, 5], [0.22, 0], clamp)}} />
+      <div style={{position: 'absolute', left: 50, right: 110, top, height: bottom - top, display: 'flex', flexDirection: 'column', justifyContent: cover ? 'flex-end' : 'center', alignItems: 'center',
+        fontWeight: 800, fontSize: size, lineHeight: 1.04, letterSpacing: spec.lang === 'hi' ? 0 : -3, opacity: interpolate(f, [PHOTO_FRAMES - 9, PHOTO_FRAMES - 1], [1, 0], clamp)}}>
+        {lines.map((line, li) => (
+          <div key={li} style={{whiteSpace: 'nowrap'}}>
+            {line.map((word) => {
+              n += 1;
+              const at = n * step; // the first word is already on screen in frame one
+              const p = spring({frame: f - at + 3, fps: FPS, config: {damping: 10, stiffness: 240, mass: 0.6}});
+              const yellow = hasDigit ? /\p{Nd}/u.test(word) : n === all.length - 1;
+              return <span key={n} style={{display: 'inline-block', margin: '0 14px', color: yellow ? '#ffd54a' : '#fff', opacity: f >= at ? 1 : 0, scale: interpolate(p, [0, 1], [2.1, 1]),
+                textShadow: '0 14px 44px rgba(0,0,0,.7)', WebkitTextStroke: `${Math.max(10, size * 0.085)}px rgba(6,12,32,.92)`, paintOrder: 'stroke fill'}}>{word}</span>;
+            })}
+          </div>
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
 export const SceneWrap = ({dur, first, last, children}) => {
   const f = useCurrentFrame();
   const a = first ? 1 : interpolate(f, [0, FADE * 2], [0, 1], clamp);
@@ -142,7 +218,7 @@ const BrainyLayer = ({spec, timing}) => {
     const words = timing.scenes.flatMap((s) => s.words);
     talking = words.some((w) => t >= w.s - 0.03 && t <= w.e + 0.03) ? 1 : 0;
   }
-  const intro = spring({frame: f - (spec.hookText ? HOOK_FRAMES - 2 : 2), fps: FPS, config: {damping: 14}});
+  const intro = spring({frame: f - (spec.hookText ? openFrames(spec) - 2 : 2), fps: FPS, config: {damping: 14}});
   return <Brainy size={size} talk={talking} emotion={spec.scenes[k]?.mood === 'wow' ? 'wow' : 'happy'}
     style={{left, top, scale: interpolate(intro, [0, 1], [0.6, 1]), opacity: interpolate(intro, [0, 0.4], [0, 1], clamp),
       translate: `0px ${Math.sin(f / 18) * (6 + big * 8)}px`, rotate: `${Math.sin(f / 30) * 3}deg`}} />;
@@ -219,20 +295,22 @@ export const Video = ({jobId, spec, timing}) => {
         const from = Math.max(0, starts[k] - FADE);
         const end = k + 1 < starts.length ? starts[k + 1] : durationFor(timing);
         const dur = end + FADE - from;
-        const cue = makeCue({st, dur, from, minFrame: k === 0 && spec.hookText ? HOOK_FRAMES - from : null});
+        const cue = makeCue({st, dur, from, minFrame: k === 0 && spec.hookText ? openFrames(spec) - from : null});
         return (
           <Sequence key={k} from={from} durationInFrames={dur} name={`${k}:${scene.type}`}>
             <SceneWrap dur={dur} first={k === 0} last={k === spec.scenes.length - 1}>
-              <Comp scene={scene} cue={cue} dur={dur} />
+              <Comp scene={scene} cue={cue} dur={dur} photo={k === 0 && !!spec.photo} />
             </SceneWrap>
           </Sequence>
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
-      {spec.opening === 'slam'
+      {spec.photo
+        ? <PhotoOpening jobId={jobId} spec={spec} hookEnd={starts[1] ?? 150} />
+        : spec.opening === 'slam'
         ? <SlamOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />
         : <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />}
-      <Captions timing={timing} hideUntil={spec.hookText ? HOOK_FRAMES + 4 : 0} />
+      <Captions timing={timing} hideUntil={spec.hookText ? openFrames(spec) + 4 : 0} />
       <SubscribeNudge timing={timing} />
       <Music total={durationFor(timing)} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
