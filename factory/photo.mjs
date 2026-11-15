@@ -57,7 +57,10 @@ async function search(query) {
 export async function findPhoto({subject, queries, dir, log = () => {}}) {
   const seen = new Set();
   const cands = [];
-  for (const q of (queries || []).filter(Boolean).slice(0, 3)) {
+  // the writer's phrases first; then plainer ones ("a swimming sloth" -> "swimming sloth" -> "sloth"), because very specific phrases often find nothing
+  const plain = String(subject || '').replace(/^(an?|the)\s+/i, '').trim();
+  const tries = [...new Set([...(queries || []).filter(Boolean).slice(0, 3), plain, plain.split(/\s+/).pop()].filter(Boolean))];
+  for (const q of tries) {
     for (const c of await search(q)) {
       if (cands.length >= MAX_CANDIDATES) break;
       if (seen.has(c.page)) continue;
@@ -86,7 +89,7 @@ You get ${usable.length} candidate images, numbered 0 to ${usable.length - 1} in
 
 Pick the ONE best image, or -1 if none is good enough. An image is only acceptable if ALL of these are true:
 - It is a real photograph (or a real telescope, microscope or satellite image). NOT a drawing, painting, engraving, diagram, map, chart, logo, stamp, coin, book page, screenshot or museum label.
-- The subject is really "${subject}" (not a different species, object or place), clearly visible, large in the frame and reasonably sharp.
+- The subject is really "${subject}" (not a different species, object or place), clearly visible, large in the frame and reasonably sharp. If the description names an action or a setting (swimming, at night, in space), a clear photo of the same animal or thing without that action is fine.
 - It is safe for children: no nudity, no gore, no blood, no dead or injured animals or people, no weapons pointed at anyone, nothing sexual or frightening.
 - No recognisable private person as the main subject, and no big watermark or large text over the picture.
 - It is a clean, striking picture: NOT a cluttered shop window, shelf, museum display with labels, product packaging, barcode, sign, or a snapshot where the subject is just one thing among many.
