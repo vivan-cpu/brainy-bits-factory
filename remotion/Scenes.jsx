@@ -193,7 +193,9 @@ export const Timeline = ({scene, cue}) => {
   const steps = (scene.steps || []).slice(0, 4);
   const n = steps.length || 1;
   const xs = steps.map((_, i) => (n === 1 ? 540 : 150 + (780 * i) / (n - 1)));
-  const ats = steps.map((s, i) => cue(s.at, 0.08 + (0.32 * i) / Math.max(1, n - 1)));
+  // steps must appear in order: a cue word spoken earlier than the step before it would give a backwards (invalid) animation range and crash the render
+  const ats = [];
+  steps.forEach((s, i) => ats.push(Math.max(cue(s.at, 0.08 + (0.32 * i) / Math.max(1, n - 1)), i ? ats[i - 1] + 6 : 0)));
   const lineTo = interpolate(f, [ats[0], ats[n - 1] + 8], [xs[0], xs[n - 1]], {...clamp, easing: Easing.inOut(Easing.cubic)});
   const size = n <= 2 ? 250 : n === 3 ? 210 : 170;
   return (

@@ -141,7 +141,7 @@ const PhotoOpening = ({jobId, spec, hookEnd}) => {
   const B = cover ? (asp < 0.9 ? {w: 700, h: 880, cy: 650} : {w: 800, h: 800, cy: 640}) : {w: 900, h: 900 / asp, cy: 640};
   const w = lerp(leave, A.w, B.w), h = lerp(leave, A.h, B.h), cy = lerp(leave, A.cy, B.cy);
   const punch = interpolate(spring({frame: f, fps: FPS, config: {damping: 11, stiffness: 190, mass: 0.6}}), [0, 1], [1.2, 1]);
-  const zoom = punch * interpolate(f, [0, PHOTO_FRAMES, hookEnd], [1.08, 1.2, 1.26], clamp);
+  const zoom = punch * interpolate(f, [0, PHOTO_FRAMES, Math.max(hookEnd, PHOTO_FRAMES + 1)], [1.08, 1.2, 1.26], clamp); // a very short hook must not give a backwards range
   const lines = hookLines(spec.hookText || '');
   const all = lines.flat();
   const longest = Math.max(...lines.map((l) => l.join(' ').length), 4);
