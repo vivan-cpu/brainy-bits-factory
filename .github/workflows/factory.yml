@@ -2,9 +2,10 @@ name: Brainy Bits factory
 
 on:
   schedule:
-    # every day 14:00 India time (GitHub can start it hours late) -> 4 Shorts, plus a long video on Mon/Wed/Sat.
-    # 08:30 UTC is just after the free Gemini quota resets (midnight Pacific) and well before the first publish slot (15:00 UTC).
-    - cron: '30 8 * * *'
+    # 4 Shorts a day, plus a long video on Mon/Wed/Sat. GitHub starts this repo's schedule 7 to 11 hours late
+    # (00:30 ran at about 07:00, 08:30 ran at about 19:20), so 02:30 UTC really starts between 09:30 and 13:30 UTC:
+    # after the free Gemini quota resets (08:00 UTC) and before the first publish slot (15:00 UTC).
+    - cron: '30 2 * * *'
   workflow_dispatch:
     inputs:
       count:
