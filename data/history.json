@@ -287,5 +287,33 @@
   "topic": "Deep Sea Wonders",
   "title": "6 Hidden Wonders of the Deep Sea",
   "category": "ocean life"
+ },
+ {
+  "date": "2026-11-17",
+  "topic": "honeybee face recognition",
+  "title": "A honeybee can recognize your face",
+  "category": "insects and bugs",
+  "opening": "photo"
+ },
+ {
+  "date": "2026-11-17",
+  "topic": "Cranberry physics",
+  "title": "A fresh cranberry can bounce like a ball",
+  "category": "food science",
+  "opening": "slam"
+ },
+ {
+  "date": "2026-11-17",
+  "topic": "Greenland shark age",
+  "title": "The Greenland shark is 400 years old",
+  "category": "ocean life",
+  "opening": "photo"
+ },
+ {
+  "date": "2026-11-17",
+  "topic": "The SS Baychimo Ghost Ship",
+  "title": "The SS Baychimo survived as a ghost ship for 38 years",
+  "category": "survival against the odds",
+  "opening": "photo"
  }
 ]
