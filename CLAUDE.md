@@ -35,7 +35,7 @@ These came from real YouTube Studio numbers. Do not undo them without new data.
 - **One extra twist is saved for the end**, and the **subscribe ask** is the last sentence of the scene right before it (`askProblems`). An animated SUBSCRIBE button appears when the word is spoken (`SubscribeNudge`).
 - **Animals and ocean life get 3 to 8 times the views**, so `CATEGORIES` in `prompts.mjs` is weighted toward them.
 - **Titles name the subject.** "The snack that changed history" got 84 views; "Why an octopus has blue blood and three hearts" got 570.
-- **Publish hours are US/UK daytime** (`SLOTS` in `youtube.mjs`: 15, 18, 21, 24 UTC; long videos 22:30 UTC). Morning-UTC slots reached mostly Asia (28 days to 14 Nov 2026: India 21%, US 7.5%, Philippines 6%, Indonesia 5%). The 15:00 slot is also 20:30 in India.
+- **Publish hours are India daytime, chosen by Vivan on 18 Nov 2026** (`SLOTS` in `youtube.mjs`, in IST: 06:00, 10:00, 14:00, 18:00; long videos 16:00). Nothing after 18:00 IST, so every Short of the day is public by evening. Each run fills the next India day. Both channels use the same hours. Before this the English slots were US/UK daytime (15, 18, 21, 24 UTC); the audience was already mostly Asia (28 days to 14 Nov 2026: India 21%, US 7.5%, Philippines 6%, Indonesia 5%).
 - **Family-friendly always.** No mass-casualty stories, nothing a child could copy and get hurt, no private people in photos.
 - **Photos must be freely licensed:** public domain, CC0 or CC BY only (no share-alike, non-commercial or no-derivatives), with the credit line in the description. This keeps the channel safe for monetisation later.
 
@@ -75,10 +75,11 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 ## Hindi channel
 `--lang hi` writes Hindi scripts (Devanagari), uses Hindi voices and the Baloo 2 font, and keeps its own `data/history-hi.json`.
 
-The workflow job `make-hi` makes 3 Hindi Shorts a day in its own job and uploads them to "Brainyvoo Hindi" at 18:00, 20:00 and 22:00 IST. It is **off until these are set** (Settings → Secrets and variables → Actions):
+The workflow job `make-hi` makes 4 Hindi Shorts a day in its own job and uploads them to "Brainyvoo Hindi" at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). It is **off until these are set** (Settings → Secrets and variables → Actions):
 - secret `YT_REFRESH_TOKEN_HI`: the Hindi channel's sign-in (run `node factory/yt-auth.mjs ~/.config/brainy-bits/client_secret.json` and pick the Hindi channel; Vivan pastes the token himself)
 - variables `YT_HANDLE_HI` (its @handle without the @), `YT_CHANNEL_ID_HI` (its UC... id, turns on the views learning loop), then `HINDI=1`
-- optional `HINDI_COUNT` (default 3)
+- optional `HINDI_COUNT` (default 4)
+- Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts and a long video that is 9 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
 
 `youtube.mjs` takes `YT_LANG` (description footer and video language) and `YT_HANDLE` (subscribe link). The channel does not exist yet: Vivan creates and phone-verifies it himself.
 

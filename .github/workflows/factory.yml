@@ -112,7 +112,7 @@ jobs:
           YT_SCHEDULE: ${{ vars.YT_SCHEDULE || '1' }}
         run: node factory/youtube.mjs
 
-  # Hindi channel "Brainyvoo Hindi": 3 Hindi Shorts a day, in its own job so it never slows down or breaks the English one.
+  # Hindi channel "Brainyvoo Hindi": 4 Hindi Shorts a day, in its own job so it never slows down or breaks the English one.
   # OFF until the repo variable HINDI=1 is set. It also needs the secret YT_REFRESH_TOKEN_HI (the Hindi channel's sign-in)
   # and the repo variables YT_HANDLE_HI (its @handle, without @) and YT_CHANNEL_ID_HI (its UC... id).
   make-hi:
@@ -156,7 +156,7 @@ jobs:
           RENDER_CONCURRENCY: '100%'
           BRAINY_TTS: auto
           YT_CHANNEL_ID: ${{ vars.YT_CHANNEL_ID_HI }}
-        run: node factory/run.mjs --lang hi --count "${{ vars.HINDI_COUNT || '3' }}"
+        run: node factory/run.mjs --lang hi --count "${{ vars.HINDI_COUNT || '4' }}"
 
       - name: Remember used Hindi topics
         if: always()
@@ -175,7 +175,7 @@ jobs:
           gh release create "$TAG" out/*.mp4 --title "Brainyvoo Hindi $(date -u +'%d %b %Y %H:%M') UTC" --notes-file out/release-notes.md
 
       - name: Upload to the Hindi channel
-        # Publish hours are Indian evening: 18:00, 20:00 and 22:00 IST (12:30, 14:30, 16:30 UTC).
+        # Same publish hours as English (SLOTS in factory/youtube.mjs): 06:00, 10:00, 14:00, 18:00 IST.
         if: success() && env.HAS_YT == 'true' && vars.YT_UPLOAD == '1'
         env:
           YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
@@ -185,5 +185,4 @@ jobs:
           YT_HANDLE: ${{ vars.YT_HANDLE_HI }}
           YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
           YT_SCHEDULE: ${{ vars.YT_SCHEDULE || '1' }}
-          YT_SLOTS: '12.5,14.5,16.5,18.5'
         run: node factory/youtube.mjs

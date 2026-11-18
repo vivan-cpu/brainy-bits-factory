@@ -54,18 +54,21 @@ async function setThumbnail(token, videoId, file) {
 
 const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'out/manifest.json'), 'utf8'));
 const token = await accessToken();
-// Publish hours in UTC. YouTube first shows a Short to people who are awake when it goes live: the old morning-UTC slots
-// reached mostly Asia (India, Indonesia, the Philippines), where many viewers swipe away from English narration. These slots are
-// daytime and evening in the US and UK (10:00, 13:00, 16:00, 19:00 New York); the first one is also 20:30 in India. Long videos go out at 22:30 UTC. YT_SLOTS overrides the Shorts hours.
-const SLOTS = (process.env.YT_SLOTS || '15,18,21,24').split(',').map(Number);
-const LONG_SLOT = 22.5;
+// Publish hours in India time (IST, UTC+5:30), chosen by Vivan on 18 Nov 2026: first Short at 06:00, last at 18:00, so every
+// Short of the day is public by evening. Long videos go out at 16:00. YT_SLOTS overrides the Shorts hours (IST).
+// A run (it starts about 15:00-19:00 IST) fills the NEXT India day, so the slots never fall in the past and runs never collide.
+const SLOTS = (process.env.YT_SLOTS || '6,10,14,18').split(',').map(Number);
+const EXTRA = [8, 12, 17, 17.5]; // a manual run with more Shorts than slots: in the gaps, still before 18:00
+const LONG_SLOT = 16;
+const IST = 5.5 * 3600 * 1000;
 const now = Date.now();
-const day0 = new Date(); day0.setUTCHours(0, 0, 0, 0);
+const istDay = new Date(now + IST - 6 * 3600 * 1000); istDay.setUTCHours(0, 0, 0, 0); // a run just after midnight IST still counts as the evening before
+const day0 = new Date(istDay.getTime() + 24 * 3600 * 1000 - IST); // 00:00 IST of the next India day, as a real instant
 const soon = new Date(now); soon.setUTCMinutes(0, 0, 0); soon.setUTCHours(soon.getUTCHours() + 1);
 let short = 0, late = 0;
 function publishTime(m) {
   if (!SCHEDULE) return null;
-  const hour = m.long ? LONG_SLOT : SLOTS[short++] ?? SLOTS[SLOTS.length - 1] + 3 * (short - SLOTS.length);
+  const hour = m.long ? LONG_SLOT : SLOTS[short++] ?? EXTRA[short - SLOTS.length - 1] ?? 17.5;
   let t = day0.getTime() + hour * 3600 * 1000;
   if (t < now + 20 * 60 * 1000) t = soon.getTime() + late++ * 3 * 3600 * 1000; // the run started very late: next full hour, 3 hours apart
   return new Date(t).toISOString();
