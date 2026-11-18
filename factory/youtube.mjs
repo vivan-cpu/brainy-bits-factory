@@ -22,7 +22,7 @@ async function accessToken() {
 async function upload(token, meta, publishAt) {
   const file = path.join(ROOT, 'out', meta.file);
   const size = fs.statSync(file).size;
-  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}${meta.credit ? `\n${meta.credit}` : ''}\n\nSubscribe for new weird facts every day: https://www.youtube.com/@factsbrainybits?sub_confirmation=1\nAnimated by Brainy Bits.`.slice(0, 4900);
+  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}${meta.credit ? `\n${meta.credit}` : ''}\n\nSubscribe for new weird facts every day: https://www.youtube.com/@factsbrainybits?sub_confirmation=1\nAnimated by Brainyvoo.`.slice(0, 4900);
   const status = {privacyStatus: publishAt ? 'private' : PRIVACY, selfDeclaredMadeForKids: false};
   if (publishAt) status.publishAt = publishAt;
   const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {

@@ -20,7 +20,7 @@ const SCENE_TYPES = `SCENE TYPES (fields)
 - outro: {type, narration, mood}`;
 
 export function longPrompt({category, used, emojiNames, feedback, insights = ''}) {
-  return `You write scripts for "Brainy Bits", a YouTube channel where Brainy, a cute cartoon brain mascot, explains true, surprising facts. This script is for a 3 to 4 minute landscape video: six surprising facts on one theme, ordered so the most surprising fact comes last. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
+  return `You write scripts for "Brainyvoo", a YouTube channel where Brainy, a cute cartoon brain mascot, explains true, surprising facts. This script is for a 3 to 4 minute landscape video: six surprising facts on one theme, ordered so the most surprising fact comes last. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
 TASK: Pick ONE specific, interesting theme in the category "${category}".
 ${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
@@ -72,7 +72,7 @@ export const STORY_CATEGORIES = [
 ];
 
 export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false, insights = ''}) {
-  return `You write scripts for "Brainy Bits", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
+  return `You write scripts for "Brainyvoo", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
 TASK: ${topic ? `Write a script about: "${topic}".` : story ? `Tell ONE gripping, TRUE, well-documented story in the theme "${category}": a real event, person or animal with a clear beginning, a problem, a turning point and a surprising ending.` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
 ${story ? `STORY RULES (this video is a true story, not a list of facts)
@@ -132,8 +132,8 @@ ${emojiNames.join(', ')}`;
 }
 
 export const OUTRO = {
-  en: 'Subscribe to Brainy Bits for new weird facts every day!',
-  hi: 'हर दिन नए मज़ेदार फैक्ट्स के लिए ब्रेनी बिट्स को सब्सक्राइब करें!',
+  en: 'Subscribe to Brainyvoo for new weird facts every day!',
+  hi: 'हर दिन नए मज़ेदार फैक्ट्स के लिए ब्रेनीवू को सब्सक्राइब करें!',
 };
 
 // Hindi channel: same rules, but everything the viewer hears or reads is in Hindi

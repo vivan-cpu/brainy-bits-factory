@@ -1,4 +1,4 @@
-// Brainy Bits factory orchestrator.
+// Brainyvoo factory orchestrator.
 // node factory/run.mjs [--count 5] [--topic "why flamingos are pink"] [--skip-factcheck]
 import fs from 'node:fs';
 import path from 'node:path';

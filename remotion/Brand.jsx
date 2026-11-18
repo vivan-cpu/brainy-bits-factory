@@ -25,7 +25,7 @@ export const Banner = () => (
     <Brainy size={360} emotion="happy" style={{left: 560, top: 540}} />
     <div style={{position: 'absolute', left: 950, top: 540, width: 1100}}>
       <div style={{fontWeight: 800, fontSize: 168, lineHeight: 1, letterSpacing: -5, color: '#fff', textShadow: '0 12px 40px rgba(0,0,0,.5)', whiteSpace: 'nowrap'}}>
-        BRAINY <span style={{color: '#ffd54a'}}>BITS</span>
+        BRAINY<span style={{color: '#ffd54a'}}>VOO</span>
       </div>
       <div style={{marginTop: 26, fontWeight: 700, fontSize: 62, color: '#eaf6ff', textShadow: '0 6px 22px rgba(0,0,0,.5)', whiteSpace: 'nowrap'}}>Weird facts that are actually true</div>
       <div style={{marginTop: 26, display: 'inline-block', padding: '14px 38px', borderRadius: 60, background: '#ff2d2d', color: '#fff', fontWeight: 800, fontSize: 46, letterSpacing: 1,
