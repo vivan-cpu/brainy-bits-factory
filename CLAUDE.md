@@ -1,6 +1,6 @@
 # Brainy Bits factory: handbook
 
-This repo makes and uploads the videos for the YouTube channel **Brainy Bits facts** (@factsbrainybits, channel ID `UCEKBQxcGl0NTb2zot5bxu1A`). It runs by itself every day on GitHub Actions. The owner is Vivan (a school student, beginner at code). Explain things to him simply and keep replies short.
+This repo makes and uploads the videos for the YouTube channel **Brainyvoo** (@brainyvoo, renamed from "Brainy Bits facts" / @factsbrainybits on 18 Nov 2026, channel ID `UCEKBQxcGl0NTb2zot5bxu1A`). It runs by itself every day on GitHub Actions. The owner is Vivan (a school student, beginner at code). Explain things to him simply and keep replies short.
 
 ## What runs every day
 `.github/workflows/factory.yml`, cron `30 2 * * *` UTC. GitHub starts this repo's schedule 7 to 11 hours late (00:30 ran at about 07:00; 08:30 ran at about 19:20 and missed the 15:00 and 18:00 publish slots), so 02:30 really starts between 09:30 and 13:30 UTC: after the free Gemini quota resets (08:00 UTC) and before the first slot. The best free model (`gemini-3-flash-preview`) has a small daily quota that local testing shares.

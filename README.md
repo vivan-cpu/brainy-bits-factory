@@ -1,6 +1,6 @@
 # Brainy Bits factory
 
-Makes animated YouTube Shorts for **Brainy Bits** (@factsbrainybits) every day, in the cloud.
+Makes animated YouTube Shorts for **Brainyvoo** (@brainyvoo) every day, in the cloud.
 
 For how everything works and why, read `CLAUDE.md`.
 
