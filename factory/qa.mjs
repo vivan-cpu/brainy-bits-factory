@@ -31,6 +31,11 @@ export function checkSpec(spec, emojiSet) {
   if (sc[0]?.type !== 'hook') problems.push('first scene is not a hook');
   if (!sc[0]?.items?.length) problems.push('hook needs at least one item: its first emoji fills the screen in the opening');
   problems.push(...claimProblems(spec), ...askProblems(spec));
+  if (spec.lang === 'hi') { // Gemini sometimes leaves the headline or title in English on the Hindi channel
+    const DEV = /[ऀ-ॿ]/;
+    if (!DEV.test(spec.hookText || '')) problems.push('hookText must be in Hindi (Devanagari script), not English');
+    if (!DEV.test(spec.title || '')) problems.push('title must be in Hindi (Devanagari script), not English');
+  }
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);

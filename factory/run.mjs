@@ -36,7 +36,7 @@ const refurbTopic = (v) => `${v.title}. What the earlier version covered: ${v.de
 // which recent videos people watched most and least, so topics and titles drift toward what works.
 const CHANNEL_ID = process.env.YT_CHANNEL_ID || 'UCEKBQxcGl0NTb2zot5bxu1A';
 async function channelInsights() {
-  if (LANG !== 'en') return '';
+  if (LANG !== 'en' && !process.env.YT_CHANNEL_ID) return ''; // the Hindi channel needs its own YT_CHANNEL_ID
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
       const res = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`);

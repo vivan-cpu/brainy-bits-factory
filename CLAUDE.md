@@ -73,7 +73,14 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 5. Render a still of it and look at it before pushing.
 
 ## Hindi channel
-`--lang hi` writes Hindi scripts (Devanagari), uses Hindi voices and the Baloo 2 font, and keeps its own `data/history-hi.json`. The channel does not exist yet: Vivan creates and phone-verifies it himself, then a second refresh token is added as a secret and a second upload job is added to the workflow. The plan is in Claude's memory (`project_brainy_bits_hindi_channel.md`).
+`--lang hi` writes Hindi scripts (Devanagari), uses Hindi voices and the Baloo 2 font, and keeps its own `data/history-hi.json`.
+
+The workflow job `make-hi` makes 3 Hindi Shorts a day in its own job and uploads them to "Brainyvoo Hindi" at 18:00, 20:00 and 22:00 IST. It is **off until these are set** (Settings → Secrets and variables → Actions):
+- secret `YT_REFRESH_TOKEN_HI`: the Hindi channel's sign-in (run `node factory/yt-auth.mjs ~/.config/brainy-bits/client_secret.json` and pick the Hindi channel; Vivan pastes the token himself)
+- variables `YT_HANDLE_HI` (its @handle without the @), `YT_CHANNEL_ID_HI` (its UC... id, turns on the views learning loop), then `HINDI=1`
+- optional `HINDI_COUNT` (default 3)
+
+`youtube.mjs` takes `YT_LANG` (description footer and video language) and `YT_HANDLE` (subscribe link). The channel does not exist yet: Vivan creates and phone-verifies it himself.
 
 ## Things that need Vivan (or a parent)
 - Phone verification of the channel (also unlocks custom thumbnails for long videos; until then `thumbnails.set` returns 403, which is expected).

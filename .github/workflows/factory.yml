@@ -91,7 +91,7 @@ jobs:
           git config user.name "brainy-bot"
           git config user.email "brainy-bot@users.noreply.github.com"
           git add data/history.json data/refurbish.json
-          git diff --cached --quiet || (git commit -m "history: topics from run ${{ github.run_number }}" && git push)
+          git diff --cached --quiet || (git commit -m "history: topics from run ${{ github.run_number }}" && (git push || (git pull --rebase && git push)))
 
       - name: Publish the Shorts as a release (download them on your phone)
         if: success()
@@ -110,4 +110,80 @@ jobs:
           YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
           YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
           YT_SCHEDULE: ${{ vars.YT_SCHEDULE || '1' }}
+        run: node factory/youtube.mjs
+
+  # Hindi channel "Brainyvoo Hindi": 3 Hindi Shorts a day, in its own job so it never slows down or breaks the English one.
+  # OFF until the repo variable HINDI=1 is set. It also needs the secret YT_REFRESH_TOKEN_HI (the Hindi channel's sign-in)
+  # and the repo variables YT_HANDLE_HI (its @handle, without @) and YT_CHANNEL_ID_HI (its UC... id).
+  make-hi:
+    if: vars.HINDI == '1' && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      HAS_YT: ${{ secrets.YT_REFRESH_TOKEN_HI != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Kokoro voice model
+        uses: actions/cache@v4
+        with:
+          path: ~/kokoro
+          key: kokoro-v1.0
+
+      - name: Install
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          pip install edge-tts==7.3.1 kokoro-onnx soundfile
+          mkdir -p ~/kokoro
+          B=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
+          [ -f ~/kokoro/kokoro-v1.0.onnx ] || curl -sSL -o ~/kokoro/kokoro-v1.0.onnx $B/kokoro-v1.0.onnx
+          [ -f ~/kokoro/voices-v1.0.bin ] || curl -sSL -o ~/kokoro/voices-v1.0.bin $B/voices-v1.0.bin
+          npm ci
+
+      - name: Make Hindi Shorts
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHON: python
+          RENDER_CONCURRENCY: '100%'
+          BRAINY_TTS: auto
+          YT_CHANNEL_ID: ${{ vars.YT_CHANNEL_ID_HI }}
+        run: node factory/run.mjs --lang hi --count "${{ vars.HINDI_COUNT || '3' }}"
+
+      - name: Remember used Hindi topics
+        if: always()
+        run: |
+          git config user.name "brainy-bot"
+          git config user.email "brainy-bot@users.noreply.github.com"
+          git add data/history-hi.json
+          git diff --cached --quiet || (git commit -m "history-hi: topics from run ${{ github.run_number }}" && (git push || (git pull --rebase && git push)))
+
+      - name: Publish the Hindi Shorts as a release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="hindi-$(date -u +%Y%m%d-%H%M)"
+          gh release create "$TAG" out/*.mp4 --title "Brainyvoo Hindi $(date -u +'%d %b %Y %H:%M') UTC" --notes-file out/release-notes.md
+
+      - name: Upload to the Hindi channel
+        # Publish hours are Indian evening: 18:00, 20:00 and 22:00 IST (12:30, 14:30, 16:30 UTC).
+        if: success() && env.HAS_YT == 'true' && vars.YT_UPLOAD == '1'
+        env:
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN_HI }}
+          YT_LANG: hi
+          YT_HANDLE: ${{ vars.YT_HANDLE_HI }}
+          YT_PRIVACY: ${{ vars.YT_PRIVACY || 'private' }}
+          YT_SCHEDULE: ${{ vars.YT_SCHEDULE || '1' }}
+          YT_SLOTS: '12.5,14.5,16.5,18.5'
         run: node factory/youtube.mjs

@@ -8,6 +8,15 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace
 const {YT_CLIENT_ID, YT_CLIENT_SECRET, YT_REFRESH_TOKEN} = process.env;
 const PRIVACY = process.env.YT_PRIVACY || 'private';
 const SCHEDULE = process.env.YT_SCHEDULE === '1';
+// YT_LANG=hi uploads to the Hindi channel (the workflow passes that channel's token as YT_REFRESH_TOKEN).
+// YT_HANDLE is the channel's @handle for the subscribe link.
+const LANG = process.env.YT_LANG || 'en';
+const HANDLE = process.env.YT_HANDLE || (LANG === 'en' ? 'brainyvoo' : '');
+const FOOTERS = {
+  en: {sub: 'Subscribe for new weird facts every day', by: 'Animated by Brainyvoo.'},
+  hi: {sub: 'हर दिन नए मज़ेदार फैक्ट्स के लिए सब्सक्राइब करें', by: 'Brainyvoo Hindi द्वारा बनाया गया।'},
+};
+const FOOTER = FOOTERS[LANG] || FOOTERS.en;
 
 async function accessToken() {
   const res = await fetch('https://oauth2.googleapis.com/token', {
@@ -22,13 +31,13 @@ async function accessToken() {
 async function upload(token, meta, publishAt) {
   const file = path.join(ROOT, 'out', meta.file);
   const size = fs.statSync(file).size;
-  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}${meta.credit ? `\n${meta.credit}` : ''}\n\nSubscribe for new weird facts every day: https://www.youtube.com/@brainyvoo?sub_confirmation=1\nAnimated by Brainyvoo.`.slice(0, 4900);
+  const description = `${meta.description}\n\nSources: ${(meta.sources || []).join('; ')}${meta.credit ? `\n${meta.credit}` : ''}\n\n${FOOTER.sub}${HANDLE ? `: https://www.youtube.com/@${HANDLE}?sub_confirmation=1` : '!'}\n${FOOTER.by}`.slice(0, 4900);
   const status = {privacyStatus: publishAt ? 'private' : PRIVACY, selfDeclaredMadeForKids: false};
   if (publishAt) status.publishAt = publishAt;
   const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
     method: 'POST',
     headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json; charset=UTF-8', 'x-upload-content-type': 'video/mp4', 'x-upload-content-length': String(size)},
-    body: JSON.stringify({snippet: {title: meta.title.slice(0, 100), description, tags: (meta.tags || []).slice(0, 15), categoryId: '27', defaultLanguage: 'en', defaultAudioLanguage: 'en'}, status}),
+    body: JSON.stringify({snippet: {title: meta.title.slice(0, 100), description, tags: (meta.tags || []).slice(0, 15), categoryId: '27', defaultLanguage: LANG, defaultAudioLanguage: LANG}, status}),
   });
   if (!init.ok) throw new Error(`upload init failed: HTTP ${init.status} ${(await init.text()).slice(0, 300)}`);
   const put = await fetch(init.headers.get('location'), {method: 'PUT', headers: {'content-type': 'video/mp4', 'content-length': String(size)}, body: fs.readFileSync(file)});
