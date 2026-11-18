@@ -195,7 +195,7 @@ async function makeOne(i) {
   log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
   const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
-  if (!LONG && process.env.NO_PHOTO !== '1') { // a real photo of the subject opens the Short; without one the cartoon opening is used
+  if (!LONG && process.env.PHOTO === '1') { // OFF by default since 18 Nov 2026: photo-opening Shorts got 0-17 views vs 80-900 for cartoon openings. PHOTO=1 turns it back on
     const want = spec.photo || {};
     let found = null;
     log(`  photo wanted: ${want.subject || spec.topic} [${(want.queries || []).join(' | ')}]`);

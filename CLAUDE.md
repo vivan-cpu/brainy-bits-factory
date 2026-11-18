@@ -29,7 +29,8 @@ Repo variables: `YT_UPLOAD=1`, `YT_PRIVACY=public`, `YT_SCHEDULE=1`. Secrets: `G
 These came from real YouTube Studio numbers. Do not undo them without new data.
 
 - **The first second decides everything.** In November 2026, 75 to 93% of Shorts-feed viewers swiped away. A cartoon emoji on a gradient with a vague teaser ("TOTAL SPACE DOMINATION") did not hold anyone, in either of two animated opening styles.
-- **So the opening is a real photo** (`PhotoOpening` in `remotion/Video.jsx`): the photo fills the screen from frame one, the headline slams over it, and after 2 seconds the photo shrinks into a card for the rest of the hook scene. When no good photo exists, the cartoon openings (`HookOpening`, `SlamOpening`, alternating) are the fallback.
+- **18 Nov 2026: the photo opening is OFF by default.** All 10 photo-opening Shorts (16-18 Nov) got 0-17 views, while every cartoon-opening Short got 80-900 (the cranberry Short, cartoon, same day: 649). YouTube barely showed the photo ones at all, so the cartoon openings (`HookOpening`, `SlamOpening`) are the default again. `PHOTO=1` turns the photo step back on.
+- Earlier design (kept for reference): **the opening was a real photo** (`PhotoOpening` in `remotion/Video.jsx`): the photo fills the screen from frame one, the headline slams over it, and after 2 seconds the photo shrinks into a card for the rest of the hook scene. When no good photo exists, the cartoon openings (`HookOpening`, `SlamOpening`, alternating) are the fallback.
 - **The hook states the claim.** Scene 1 says the most surprising true claim and names the subject ("A T-Rex lived closer in time to you than to a Stegosaurus"). `hookText` is that claim as a 3 to 6 word headline. Vague teases are rejected by `claimProblems` in `qa.mjs`.
 - **One extra twist is saved for the end**, and the **subscribe ask** is the last sentence of the scene right before it (`askProblems`). An animated SUBSCRIBE button appears when the word is spoken (`SubscribeNudge`).
 - **Animals and ocean life get 3 to 8 times the views**, so `CATEGORIES` in `prompts.mjs` is weighted toward them.
@@ -51,7 +52,7 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 ```
 - One Short takes about 4 minutes. Output is `out/<id>.mp4`, the script is `jobs/<id>/spec.json`.
 - Look at real frames before pushing a visual change: `npx remotion still remotion/index.jsx Brainy out/f.jpg --props=jobs/<id>/props.json --frame=30 --scale=0.3`
-- Other flags: `--story` (true story), `--long`, `--lang hi`, `--skip-factcheck`. `NO_PHOTO=1` turns the photo step off.
+- Other flags: `--story` (true story), `--long`, `--lang hi`, `--skip-factcheck`. The photo step is off unless `PHOTO=1`.
 - Test the photo finder alone: `node factory/photo.mjs "a peacock mantis shrimp" "mantis shrimp"`
 - Before pushing anything that touches the script rules or the render, rehearse the real thing: `node factory/run.mjs --count 4`. All 4 should pass.
 - Complex edits with nested quotes fail in Bash heredocs. Write a small patch script to a temp file instead.
