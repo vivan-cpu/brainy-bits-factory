@@ -43,7 +43,8 @@ export function checkSpec(spec, emojiSet) {
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const words = sc.reduce((n, s) => n + (s.narration || '').split(/\s+/).length, 0);
-  if (words < 50 || words > 136) problems.push(`narration length ${words} words`);
+  const maxWords = spec.story ? 100 : 74; // 19 Nov 2026: Shorts under about 30 s keep more viewers
+  if (words < 40 || words > maxWords) problems.push(`narration is ${words} words: it must be ${spec.story ? '70 to 95' : '48 to 68'} words, cut filler`);
   if (!spec.title || spec.title.length > 100) problems.push('bad title');
   const middle = new Set(sc.slice(1, -1).map((s) => s.type));
   if (middle.size < 2) problems.push('not enough visual variety');

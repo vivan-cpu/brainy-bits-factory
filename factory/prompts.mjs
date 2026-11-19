@@ -1,4 +1,13 @@
 // animal and ocean Shorts get 3 to 8 times the views of the rest (Nov 2026 stats), so they come up about half the time
+// Hindi channel ("desi connection", 19 Nov 2026): half the topics are about India or things Indians see every day, so the
+// channel is not just another translated facts channel. The rest are world facts, explained with Indian comparisons.
+export const CATEGORIES_HI = [
+  'animals of India', 'animals', 'everyday things in Indian homes (chai, pressure cooker, haldi, mango, steel tumbler)', 'ocean life',
+  'Indian inventions and discoveries', 'space and ISRO missions', 'animals of India', 'human body', 'places and nature of India',
+  'animals', 'science of Indian food and festivals (no firecracker or fire how-to)', 'ocean life', 'Indian history (true, uplifting, no wars or riots)',
+  'science of cricket and sports', 'animals', 'weird world records explained with Indian comparisons',
+];
+
 export const CATEGORIES = [
   'animals', 'space', 'ocean life', 'human body', 'animals', 'science', 'ocean life', 'earth and nature',
   'animals', 'weird history', 'insects and bugs', 'food science', 'ocean life', 'dinosaurs and fossils',
@@ -71,6 +80,12 @@ export const STORY_CATEGORIES = [
   'space missions', 'unbelievable coincidences', 'ocean and shipwreck mysteries', 'record-breaking journeys',
 ];
 
+// Hindi stories: true Indian stories first (uplifting, no wars, riots or disasters)
+export const STORY_CATEGORIES_HI = [
+  'ISRO space missions', 'heroic and clever animals of India', 'Indian scientists and inventors from history', 'survival against the odds',
+  'Indian kings and queens who did something clever (no battles)', 'accidental inventions and discoveries', 'record-breaking Indian journeys', 'unbelievable coincidences',
+];
+
 export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false, insights = ''}) {
   return `You write scripts for "Brainyvoo", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
@@ -94,7 +109,7 @@ HARD RULES
 - Child safety: many viewers are children. Never pick or phrase a fact so that copying it could hurt someone (swallowing objects or chemicals, fire, electricity, holding breath, dangerous stunts, dieting or medical advice). If a topic touches this, tell it as something that happens in nature or in a lab, and never as something the viewer could try.
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
 - The title must be literally true and fully delivered by the script. It must NAME the subject (the animal, person, object or event) in plain words so a stranger knows what the video is about, and add one curiosity gap. Bad (vague): "The snack that changed history". Good: "A melted chocolate bar invented the microwave".
-- ${story ? '6 to 8 scenes. Total narration 86 to 116 words (36 to 46 seconds spoken).' : '5 to 7 scenes. Total narration 66 to 92 words (26 to 34 seconds spoken).'}
+- ${story ? '5 to 7 scenes. Total narration 70 to 95 words (30 to 38 seconds spoken).' : '4 to 6 scenes. Total narration 48 to 68 words (20 to 26 seconds spoken). Every word must earn its place: cut warm-ups, repeats and filler.'}
 - Scene 1 MUST be type "hook" and must stop the scroll in the first second: ONE short, bold sentence (6-14 words) that says the single most surprising TRUE claim of the video straight away and NAMES the subject in plain words, so a stranger instantly knows what this is about and thinks "no way, how?". Numbers are welcome. Viewers swipe away from vague teases, so NEVER write one. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (vague, nobody knows what it is about): "There is a massive secret about our neighborhood." / "This sleepy animal beats a dolphin at one thing." Good (the claim itself): "A T-Rex lived closer in time to you than to a Stegosaurus." / "This shrimp punches so fast that the water around it boils." / "A sloth can hold its breath longer than a dolphin."${story ? ' For a story, the hook says who or what it is about and the most unbelievable true thing that happened, but it keeps the ending for later.' : ''} Only the first item in the hook is required; up to 3 badges show related things.
 - The FIRST item of the hook scene is shown huge on screen from the very first frame. It must be the most literal emoji of the main subject (the animal, object or body part the video is about).
 - "hookText": 3-6 words shown huge over a real photo in the first second, and the only text on screen at that moment. It is the hook's claim squeezed into a headline that NAMES the subject, for example "T-REX NEVER MET STEGOSAURUS", "THIS SHRIMP BOILS WATER", "OCTOPUSES HAVE 3 HEARTS". Never a vague phrase like "TOTAL SPACE DOMINATION" or "IT NEVER GOES AWAY". No emojis, no word longer than 12 letters.
@@ -104,7 +119,7 @@ HARD RULES
 - SAVE ONE FINAL TWIST: the last scene before the outro delivers an even stranger related fact that the hook did not mention ("And the craziest part..."). That is the payoff viewers stay for. It should be a compare, stat, bars or bigword scene with a clear visual reveal, not a static row of icons.
 - Keep the energy high: short sentences, vivid verbs, no filler.
 - Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
-- Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey, bars, timeline, bigword, and no more than one trio. Prefer the type that SHOWS the fact: bars for comparing amounts, timeline for a sequence, bigword for the shock line. Each middle scene narration is 1-2 short spoken sentences (8-22 words) and the visual must match what is being said.
+- Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey, bars, timeline, bigword, and no more than one trio. Prefer the type that SHOWS the fact: bars for comparing amounts, timeline for a sequence, bigword for the shock line. Each middle scene narration is 1-2 short spoken sentences (8-18 words) and the visual must match what is being said.
 - Every emoji value MUST be copied exactly from the ALLOWED EMOJI list below (snake_case). Pick the most literal match. Never use "brain" (Brainy the brain is already on screen) unless the fact is about the brain.
 - Any "at", "dimAt" or "revealAt" value must be ONE word that appears in that same scene's narration.
 - Narration is spoken English: no emojis, no hashtags, no brackets, no abbreviations like "km" (say "kilometers").
@@ -148,6 +163,9 @@ LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a 
 - The outro narration must be exactly: "${OUTRO.hi}"
 - The SUBSCRIBE ASK sentence is in Hindi and must contain the word "सब्सक्राइब".
 - "tags" mix Hindi and English search words. "sources" stay in English.
+- Speak like a friendly Indian YouTuber, in everyday Hindi with the common English words people really use (Hinglish written in Devanagari: "सिर्फ़", "असल में", "स्पीड", "रिकॉर्ड"). Never stiff, bookish or Sanskrit-heavy Hindi.
+- DESI CONNECTION (this channel's signature): make the fact feel close to home for an Indian viewer. Explain EVERY big number with a comparison to something every Indian knows, for example a cricket pitch (about 20 meters), an auto-rickshaw (about 2.6 meters long), a Mumbai local train, Qutub Minar (73 meters), a two-rupee coin, a cup of chai, a samosa, the distance from Delhi to Mumbai (about 1,400 kilometers), an elephant, a school bus. If the topic is from India, say where in India. Comparisons must be accurate.
+- The "title" may add one English search word in Latin letters after the Hindi (for example "... | Octopus"), but it must start in Hindi.
 - "at", "dimAt" and "revealAt" must be one Hindi word copied exactly from that scene's narration.`;
 }
 

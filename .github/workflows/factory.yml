@@ -115,8 +115,19 @@ jobs:
   # Hindi channel "Brainyvoo Hindi": 4 Hindi Shorts a day, in its own job so it never slows down or breaks the English one.
   # OFF until the repo variable HINDI=1 is set. It also needs the secret YT_REFRESH_TOKEN_HI (the Hindi channel's sign-in)
   # and the repo variables YT_HANDLE_HI (its @handle, without @) and YT_CHANNEL_ID_HI (its UC... id).
-  make-hi:
+  # checks that the Hindi sign-in secret exists, so HINDI=1 can be set before it is pasted without wasting the Gemini quota
+  hi-gate:
     if: vars.HINDI == '1' && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    outputs:
+      ok: ${{ steps.check.outputs.ok }}
+    steps:
+      - id: check
+        run: echo "ok=${{ secrets.YT_REFRESH_TOKEN_HI != '' }}" >> "$GITHUB_OUTPUT"
+
+  make-hi:
+    needs: hi-gate
+    if: needs.hi-gate.outputs.ok == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:

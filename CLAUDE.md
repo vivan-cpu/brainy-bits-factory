@@ -34,6 +34,7 @@ These came from real YouTube Studio numbers. Do not undo them without new data.
 - **The hook states the claim.** Scene 1 says the most surprising true claim and names the subject ("A T-Rex lived closer in time to you than to a Stegosaurus"). `hookText` is that claim as a 3 to 6 word headline. Vague teases are rejected by `claimProblems` in `qa.mjs`.
 - **One extra twist is saved for the end**, and the **subscribe ask** is the last sentence of the scene right before it (`askProblems`). An animated SUBSCRIBE button appears when the word is spoken (`SubscribeNudge`).
 - **Animals and ocean life get 3 to 8 times the views**, so `CATEGORIES` in `prompts.mjs` is weighted toward them.
+- **19 Nov 2026: Shorts are shorter.** Studio, 28 days: only 16.9% of Shorts-feed viewers stayed (83.1% swiped away); 94% of views come from the Shorts feed. Fact Shorts are now 48 to 68 words (20 to 26 s), stories 70 to 95 words, because a Short people finish beats a longer one they leave.
 - **Titles name the subject.** "The snack that changed history" got 84 views; "Why an octopus has blue blood and three hearts" got 570.
 - **Publish hours are India daytime, chosen by Vivan on 18 Nov 2026** (`SLOTS` in `youtube.mjs`, in IST: 06:00, 10:00, 14:00, 18:00; long videos 16:00). Nothing after 18:00 IST, so every Short of the day is public by evening. Each run fills the next India day. Both channels use the same hours. Before this the English slots were US/UK daytime (15, 18, 21, 24 UTC); the audience was already mostly Asia (28 days to 14 Nov 2026: India 21%, US 7.5%, Philippines 6%, Indonesia 5%).
 - **Family-friendly always.** No mass-casualty stories, nothing a child could copy and get hurt, no private people in photos.
@@ -73,15 +74,18 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 5. Render a still of it and look at it before pushing.
 
 ## Hindi channel
-`--lang hi` writes Hindi scripts (Devanagari), uses Hindi voices and the Baloo 2 font, and keeps its own `data/history-hi.json`.
+**Brainyvoo Hindi** (@brainyvoohindi, channel ID `UCqIxJ7l5VwjdeXk1PRy5AUQ`), created 19 Nov 2026. Banner: `../brand/banner-brainyvoo-hindi.png` (`Banner` composition with `--props='{"lang":"hi"}'`).
 
-The workflow job `make-hi` makes 4 Hindi Shorts a day in its own job and uploads them to "Brainyvoo Hindi" at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). It is **off until these are set** (Settings → Secrets and variables → Actions):
-- secret `YT_REFRESH_TOKEN_HI`: the Hindi channel's sign-in (run `node factory/yt-auth.mjs ~/.config/brainy-bits/client_secret.json` and pick the Hindi channel; Vivan pastes the token himself)
-- variables `YT_HANDLE_HI` (its @handle without the @), `YT_CHANNEL_ID_HI` (its UC... id, turns on the views learning loop), then `HINDI=1`
-- optional `HINDI_COUNT` (default 4)
-- Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts and a long video that is 9 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
+`--lang hi` writes Hindi scripts (Devanagari), uses the Baloo 2 font and keeps its own `data/history-hi.json`. Its signature, so it is not just another translated facts channel ("desi connection", 19 Nov 2026):
+- Half the topics come from `CATEGORIES_HI` / `STORY_CATEGORIES_HI` (Indian animals, places, inventions, ISRO, food and cricket science).
+- Every big number is compared to something every Indian knows (cricket pitch, auto-rickshaw, Qutub Minar, Delhi to Mumbai). Spoken style is everyday Hinglish in Devanagari.
+- Voice: only the native `hi-IN-MadhurNeural` (the American Brian voice speaking Hindi sounded foreign).
 
-`youtube.mjs` takes `YT_LANG` (description footer and video language) and `YT_HANDLE` (subscribe link). The channel does not exist yet: Vivan creates and phone-verifies it himself.
+The workflow jobs `hi-gate` + `make-hi` make 4 Hindi Shorts a day and upload them at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). Repo variables `HINDI=1`, `YT_HANDLE_HI`, `YT_CHANNEL_ID_HI` are set. `hi-gate` skips the job until the secret `YT_REFRESH_TOKEN_HI` exists (Vivan pastes it himself; the value is in `~/.config/brainy-bits/HINDI-SECRET-PASTE-ME.txt` on the laptop). Optional `HINDI_COUNT` (default 4).
+
+Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts and a long video that is 9 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
+
+`youtube.mjs` takes `YT_LANG` (description footer and video language) and `YT_HANDLE` (subscribe link).
 
 ## Things that need Vivan (or a parent)
 - Phone verification of the channel (also unlocks custom thumbnails for long videos; until then `thumbnails.set` returns 403, which is expected).

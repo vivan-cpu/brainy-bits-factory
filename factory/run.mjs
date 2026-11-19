@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {askJSON} from './gemini.mjs';
-import {CATEGORIES, STORY_CATEGORIES, OUTRO, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
+import {CATEGORIES, CATEGORIES_HI, STORY_CATEGORIES, STORY_CATEGORIES_HI, OUTRO, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
 import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
 import {findPhoto} from './photo.mjs';
@@ -105,6 +105,7 @@ async function writeScript(category, topic, story = false) {
   for (let attempt = 1; attempt <= 4; attempt++) {
     const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story, insights}), LANG));
     const spec = repairSpec(json);
+    if (story) spec.story = true;
     const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
     if (SKIP_FC) return spec;
@@ -122,10 +123,9 @@ const VOICES = [
   {BRAINY_VOICE: 'en-US-BrianMultilingualNeural', BRAINY_RATE: '+8%', BRAINY_PITCH: '-4Hz', KOKORO_VOICE: 'am_onyx'},
 ];
 
-// Hindi: Brian Multilingual keeps Brainy's English-channel voice; Madhur is a native Hindi voice. Kokoro Hindi voices as fallback.
+// Hindi: native voice only (19 Nov 2026). The American Brian voice speaking Hindi sounds foreign and robotic to Indian viewers.
 const VOICES_HI = [
-  {BRAINY_VOICE: 'en-US-BrianMultilingualNeural', BRAINY_RATE: '+6%', BRAINY_PITCH: '-4Hz', KOKORO_VOICE: 'hm_psi', KOKORO_LANG: 'hi'},
-  {BRAINY_VOICE: 'hi-IN-MadhurNeural', BRAINY_RATE: '+4%', BRAINY_PITCH: '-8Hz', KOKORO_VOICE: 'hm_omega', KOKORO_LANG: 'hi'},
+  {BRAINY_VOICE: 'hi-IN-MadhurNeural', BRAINY_RATE: '+8%', BRAINY_PITCH: '-6Hz', KOKORO_VOICE: 'hm_omega', KOKORO_LANG: 'hi'},
 ];
 
 function buildVoice(spec, id) {
@@ -186,12 +186,14 @@ function render(spec, timing, id) {
 
 async function makeOne(i) {
   const day = Math.floor(Date.now() / 86400000);
-  const category = CATEGORIES[(day * 5 + i + (LONG ? 7 : 0)) % CATEGORIES.length];
+  const cats = LANG === 'hi' ? CATEGORIES_HI : CATEGORIES;
+  const category = cats[(day * 5 + i + (LONG ? 7 : 0)) % cats.length];
   const id = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 12) + (LONG ? '-long' : `-${i + 1}`);
   // in a daily run of 3+, the last Short is a true story; the others are facts (remakes of deleted videos go first)
   const story = !LONG && !(i === 0 && TOPIC) && (STORY_ONLY || (COUNT >= 3 && i === COUNT - 1));
   const remake = LANG === 'en' && !LONG && !story && !(i === 0 && TOPIC) ? refurbQueue.shift() : null;
-  const storyTheme = STORY_CATEGORIES[(day + i) % STORY_CATEGORIES.length];
+  const stories = LANG === 'hi' ? STORY_CATEGORIES_HI : STORY_CATEGORIES;
+  const storyTheme = stories[(day + i) % stories.length];
   log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
   const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
