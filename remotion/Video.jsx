@@ -274,19 +274,20 @@ export const SubscribeNudge = ({timing, box, name = 'Brainyvoo'}) => {
   let at = null;
   timing.scenes.slice(0, -1).forEach((s) => s.words.forEach((w) => { if (at === null && /subscri|सब्सक्राइब/i.test(w.w)) at = w.s; }));
   if (at === null) return null;
-  const g = f - Math.round((at - 0.3) * FPS);
-  if (g < 0 || g > 104) return null;
-  const inP = interpolate(g, [0, 12], [0, 1], {...clamp, easing: ease});
-  const outP = interpolate(g, [92, 104], [0, 1], {...clamp, easing: ease2});
+  // 20 Nov 2026: slowed to about 5.5 s (Vivan: "too fast, give the subscribe part time")
+  const g = f - Math.round((at - 0.5) * FPS);
+  if (g < 0 || g > 165) return null;
+  const inP = interpolate(g, [0, 18], [0, 1], {...clamp, easing: ease});
+  const outP = interpolate(g, [150, 165], [0, 1], {...clamp, easing: ease2});
   // hand path: enters from bottom right, taps the button (frame 30), moves to the bell, taps it (frame 58)
   // fixed layout inside a 1000 x 150 bar: logo 30..130, name 150.., button 560..880 (centre 720), bell centre 935
-  const hx = interpolate(g, [10, 28, 44, 56], [1010, 700, 700, 915], {...clamp, easing: ease2}) - 41;
-  const hy = interpolate(g, [10, 28, 44, 56], [300, 70, 70, 66], {...clamp, easing: ease2}) - 10;
-  const press = Math.min(interpolate(g, [28, 31, 35], [1, 0.82, 1], clamp), interpolate(g, [56, 59, 63], [1, 0.82, 1], clamp));
-  const handOp = interpolate(g, [10, 16, 76, 86], [0, 1, 1, 0], clamp);
-  const done = interpolate(g, [30, 38], [0, 1], clamp);
-  const ring = g >= 58 ? Math.sin((g - 58) / 2.6) * interpolate(g, [58, 88], [20, 0], clamp) : 0;
-  const ripple = interpolate(g, [30, 46], [0, 1], clamp);
+  const hx = interpolate(g, [22, 50, 80, 100], [1010, 700, 700, 915], {...clamp, easing: ease2}) - 41;
+  const hy = interpolate(g, [22, 50, 80, 100], [300, 70, 70, 66], {...clamp, easing: ease2}) - 10;
+  const press = Math.min(interpolate(g, [50, 54, 60], [1, 0.82, 1], clamp), interpolate(g, [100, 104, 110], [1, 0.82, 1], clamp));
+  const handOp = interpolate(g, [22, 30, 130, 142], [0, 1, 1, 0], clamp);
+  const done = interpolate(g, [53, 66], [0, 1], clamp);
+  const ring = g >= 103 ? Math.sin((g - 103) / 3) * interpolate(g, [103, 145], [20, 0], clamp) : 0;
+  const ripple = interpolate(g, [53, 75], [0, 1], clamp);
   const label = {position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap'};
   return (
     <div style={{position: 'absolute', left: 40, width: 1000, top: 1440, height: 150, opacity: inP * (1 - outP),
@@ -295,12 +296,12 @@ export const SubscribeNudge = ({timing, box, name = 'Brainyvoo'}) => {
       <Img src={staticFile('brand/logo.png')} style={{position: 'absolute', left: 30, top: 25, width: 100, height: 100, borderRadius: '50%'}} />
       <div style={{position: 'absolute', left: 150, top: 0, height: 150, width: 395, display: 'flex', alignItems: 'center', fontWeight: 800, fontSize: name.length > 12 ? 38 : 46, color: '#fff', whiteSpace: 'nowrap'}}>{name}</div>
       <div style={{position: 'absolute', left: 560, top: 29, width: 320, height: 92, borderRadius: 50, fontWeight: 800, fontSize: 38,
-        background: interpolateColors(done, [0, 1], ['#ff0033', '#3a3a40']), scale: g < 44 ? press : 1,
+        background: interpolateColors(done, [0, 1], ['#ff0033', '#3a3a40']), scale: g < 80 ? press : 1,
         boxShadow: `0 0 0 ${ripple * 30}px rgba(255,255,255,${0.35 * (1 - ripple)})`}}>
         <div style={{...label, color: '#fff', opacity: 1 - done}}>SUBSCRIBE</div>
         <div style={{...label, color: '#d8d8de', opacity: done}}>SUBSCRIBED ✓</div>
       </div>
-      <div style={{position: 'absolute', left: 893, top: 33, width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', rotate: `${ring}deg`, transformOrigin: '50% 12%', scale: g >= 44 ? press : 1}}>
+      <div style={{position: 'absolute', left: 893, top: 33, width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', rotate: `${ring}deg`, transformOrigin: '50% 12%', scale: g >= 80 ? press : 1}}>
         <Img src={staticFile('emoji/bell.svg')} style={{width: 70, height: 70}} />
       </div>
       <Hand style={{left: hx, top: hy, scale: press, opacity: handOp, transformOrigin: '37% 9%'}} />

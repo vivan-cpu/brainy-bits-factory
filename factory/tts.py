@@ -27,7 +27,7 @@ GEMINI_TTS_MODELS = os.environ.get("GEMINI_TTS_MODELS", "gemini-3.1-flash-tts-pr
 VOICE_BRAINY = os.environ.get("GEMINI_VOICE_BRAINY", "Puck")
 VOICE_KID = os.environ.get("GEMINI_VOICE_KID", "Leda")
 WHISPER_MODEL = os.environ.get("WHISPER_MODEL", "small")
-GEMINI_SPEED = float(os.environ.get("GEMINI_SPEED", "1.12"))  # Gemini storytellers speak slowly (~135 words/min); Shorts want ~160
+GEMINI_SPEED = float(os.environ.get("GEMINI_SPEED", "1.0"))  # 20 Nov 2026: 1.12 felt rushed to Vivan ("no suspense"); natural storyteller pace
 
 PUNCT = "\"'“”‘’.,!?;:()[]{}-–—…।॥*"
 
@@ -141,10 +141,10 @@ def duration_of(path):
 
 
 def tidy(src, dst, speed=1.0):
-    """trim the ends, shorten any pause longer than 0.55 s to 0.4 s (no dead stops) and speed up without changing pitch"""
+    """trim the ends, shorten any pause longer than 1 s to 0.75 s (dramatic pauses stay, dead stops go), optional speed-up without changing pitch"""
     ffmpeg("-i", src, "-af",
            "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,"
-           "silenceremove=stop_periods=-1:stop_duration=0.55:stop_threshold=-42dB:stop_silence=0.4,"
+           "silenceremove=stop_periods=-1:stop_duration=1.0:stop_threshold=-42dB:stop_silence=0.75,"
            "areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.12,areverse" + (f",atempo={speed}" if abs(speed - 1) > 0.01 else ""),
            "-ar", "44100", "-ac", "1", dst)
 
@@ -154,11 +154,11 @@ STYLE = {
     "en": ("Perform this as a gripping, fun YouTube Short. Brainy is a warm, excited storyteller, like a cool older friend. "
            "Kid is a curious, amazed little kid who asks short questions. Let the tone follow the story: lean in and slow down to build suspense, "
            "speed up when it gets exciting, sound genuinely amazed at the surprises, and smile on the playful lines. "
-           "Treat '...' as a short dramatic pause. Keep it flowing like a real conversation at a brisk, energetic YouTube Shorts pace, never slow, flat or robotic."),
+           "Take your time like a master storyteller: '...' is a real dramatic pause, hold the suspense before every reveal, and after the line asking viewers to subscribe, pause for a beat before the answer. Flowing like a real conversation, never rushed, never flat or robotic."),
     "hi": ("इसे एक मज़ेदार, रोमांचक हिंदी YouTube Short की तरह बोलिए। Brainy एक प्यारा, जोशीला कहानी सुनाने वाला बड़ा भैया है। "
            "Kid एक जिज्ञासु, हैरान छोटा बच्चा है जो छोटे-छोटे सवाल पूछता है। कहानी के साथ आवाज़ का भाव बदलिए: सस्पेंस पर धीमे और रहस्यमय, "
            "रोमांचक हिस्से पर तेज़, हैरानी वाली बात पर सच में हैरान, और मज़ेदार लाइन पर मुस्कुराते हुए। '...' पर छोटा नाटकीय ठहराव। "
-           "बिल्कुल असली बातचीत की तरह, जोश से भरी और तेज़ रफ़्तार (YouTube Shorts जैसी), कभी धीमी, सपाट या रोबोट जैसी नहीं। Natural Indian Hindi accent."),
+           "एक मंझे हुए कहानीकार की तरह आराम से बोलिए: '...' पर सच में रुकिए, हर खुलासे से पहले सस्पेंस बनाइए, और सब्सक्राइब वाली लाइन के बाद जवाब से पहले एक पल रुकिए। असली बातचीत जैसी, कभी जल्दबाज़ी नहीं, कभी सपाट या रोबोट जैसी नहीं। Natural Indian Hindi accent."),
 }
 
 
