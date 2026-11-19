@@ -92,6 +92,9 @@ def align(words, timed, duration):
             starts[i] = t if starts[i] is None else min(starts[i], t)
             ends[i] = t if ends[i] is None else max(ends[i], t)
     coverage = matched / max(1, len(a))
+    tail_ok = any(starts[i] is not None for i in range(max(0, len(words) - 8), len(words)))  # the take reached the end of the script
+    if not tail_ok:
+        coverage = min(coverage, 0.0)
     # words with no matched letters (numbers spoken as digits, misheard words): spread them between known neighbours
     n = len(words)
     known = [i for i in range(n) if starts[i] is not None]
