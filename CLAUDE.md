@@ -81,7 +81,7 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 - Every big number is compared to something every Indian knows (cricket pitch, auto-rickshaw, Qutub Minar, Delhi to Mumbai). Spoken style is everyday Hinglish in Devanagari.
 - Voice: only the native `hi-IN-MadhurNeural` (the American Brian voice speaking Hindi sounded foreign).
 
-The workflow jobs `hi-gate` + `make-hi` make 4 Hindi Shorts a day and upload them at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). Repo variables `HINDI=1`, `YT_HANDLE_HI`, `YT_CHANNEL_ID_HI` are set. `hi-gate` skips the job until the secret `YT_REFRESH_TOKEN_HI` exists (Vivan pastes it himself; the value is in `~/.config/brainy-bits/HINDI-SECRET-PASTE-ME.txt` on the laptop). Optional `HINDI_COUNT` (default 4).
+The workflow jobs `hi-gate` + `make-hi` make 4 Hindi Shorts a day and upload them at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). Repo variables `HINDI=1`, `YT_HANDLE_HI`, `YT_CHANNEL_ID_HI` are set. Secret `YT_REFRESH_TOKEN_HI` is set (19 Nov 2026); `hi-gate` skips the job if it is ever removed. A local copy for laptop uploads is `~/.config/brainy-bits/yt-refresh-token-hi.txt` (never print it). Optional `HINDI_COUNT` (default 4).
 
 Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts and a long video that is 9 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
 
