@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Audio, Img, Sequence, staticFile, useCurrentFrame, interpolate, spring, Easing} from 'remotion';
+import {AbsoluteFill, Audio, Img, Sequence, staticFile, useCurrentFrame, interpolate, interpolateColors, spring, Easing} from 'remotion';
 import {loadFont} from '@remotion/google-fonts/Montserrat';
 import {loadFont as loadHindi} from '@remotion/google-fonts/Baloo2';
 import {World} from './Worlds.jsx';
@@ -229,7 +229,14 @@ export const Captions = ({timing, hideUntil = 0, box}) => {
   if (f < hideUntil) return null; // only one piece of text on screen at a time
   const t = f / FPS;
   const chunks = [];
-  timing.scenes.forEach((s) => { for (let i = 0; i < s.words.length; i += 3) chunks.push(s.words.slice(i, i + 3)); });
+  timing.scenes.forEach((s) => {
+    let cur = [];
+    for (const w of s.words) {
+      if (cur.length && (cur.length >= 3 || !!cur[0].kid !== !!w.kid)) { chunks.push(cur); cur = []; }
+      cur.push(w);
+    }
+    if (cur.length) chunks.push(cur);
+  });
   const ci = chunks.findIndex((c, n) => t >= c[0].s - 0.05 && (n + 1 < chunks.length ? t < chunks[n + 1][0].s - 0.05 : t < c[c.length - 1].e + 0.5));
   if (ci < 0) return null;
   const c = chunks[ci];
@@ -245,36 +252,84 @@ export const Captions = ({timing, hideUntil = 0, box}) => {
           const on = t >= w.s;
           const live = on && t < w.e + 0.08;
           const k = live ? interpolate(t - w.s, [0, 0.09, 0.2], [1, 1.14, 1.06], clamp) : 1;
-          return <span key={j} style={{display: 'inline-block', margin: '0 10px', scale: k, color: on ? (live ? '#ffd54a' : '#fff') : 'rgba(255,255,255,.6)'}}>{w.w}</span>;
+          return <span key={j} style={{display: 'inline-block', margin: '0 10px', scale: k, color: w.kid ? (on ? (live ? '#7ff3ff' : '#c9f8ff') : 'rgba(200,248,255,.6)') : on ? (live ? '#ffd54a' : '#fff') : 'rgba(255,255,255,.6)'}}>{w.w}</span>;
         })}
       </div>
     </div>
   );
 };
 
-// Animated SUBSCRIBE button with a bell: pops in while Brainy says the mid-video subscribe ask, then leaves.
-export const SubscribeNudge = ({timing, box}) => {
+// A realistic YouTube subscribe bar (19 Nov 2026, replaces a bouncy button that flickered): it slides up while Brainy says
+// the subscribe ask, a hand taps SUBSCRIBE, the button fades smoothly to grey "SUBSCRIBED", then the hand rings the bell.
+const ease2 = Easing.bezier(0.45, 0, 0.2, 1);
+const Hand = ({style}) => (
+  <svg viewBox="0 0 64 64" width="110" height="110" style={{position: 'absolute', filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.45))', ...style}}>
+    <path d="M24 6c3 0 5 2 5 5v17l3-1c3-1 6 1 6 4l2-1c3-1 6 1 6 4l2-.5c3-.5 5 1.5 5 4.5v9c0 9-6 15-15 15h-4c-6 0-10-3-13-8L11 41c-1.5-2.5-.5-5.5 2-6.5 2-.8 4 0 5.5 1.5l1.5 1.5V11c0-3 2-5 4-5z"
+      fill="#fff" stroke="#1d1d1f" strokeWidth="3" strokeLinejoin="round" />
+  </svg>
+);
+
+export const SubscribeNudge = ({timing, box, name = 'Brainyvoo'}) => {
   const f = useCurrentFrame();
   let at = null;
   timing.scenes.slice(0, -1).forEach((s) => s.words.forEach((w) => { if (at === null && /subscri|सब्सक्राइब/i.test(w.w)) at = w.s; }));
   if (at === null) return null;
-  const g = f - Math.round((at - 0.25) * FPS);
-  if (g < 0 || g > 84) return null;
-  const p = spring({frame: g, fps: FPS, config: {damping: 9, stiffness: 190, mass: 0.7}});
-  const out = interpolate(g, [72, 84], [1, 0], clamp);
-  const tap = interpolate(g, [24, 29, 36], [1, 0.9, 1], clamp); // the button gets "pressed"
-  const done = g >= 29;
+  const g = f - Math.round((at - 0.3) * FPS);
+  if (g < 0 || g > 104) return null;
+  const inP = interpolate(g, [0, 12], [0, 1], {...clamp, easing: ease});
+  const outP = interpolate(g, [92, 104], [0, 1], {...clamp, easing: ease2});
+  // hand path: enters from bottom right, taps the button (frame 30), moves to the bell, taps it (frame 58)
+  // fixed layout inside a 1000 x 150 bar: logo 30..130, name 150.., button 560..880 (centre 720), bell centre 935
+  const hx = interpolate(g, [10, 28, 44, 56], [1010, 700, 700, 915], {...clamp, easing: ease2}) - 41;
+  const hy = interpolate(g, [10, 28, 44, 56], [300, 70, 70, 66], {...clamp, easing: ease2}) - 10;
+  const press = Math.min(interpolate(g, [28, 31, 35], [1, 0.82, 1], clamp), interpolate(g, [56, 59, 63], [1, 0.82, 1], clamp));
+  const handOp = interpolate(g, [10, 16, 76, 86], [0, 1, 1, 0], clamp);
+  const done = interpolate(g, [30, 38], [0, 1], clamp);
+  const ring = g >= 58 ? Math.sin((g - 58) / 2.6) * interpolate(g, [58, 88], [20, 0], clamp) : 0;
+  const ripple = interpolate(g, [30, 46], [0, 1], clamp);
+  const label = {position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', whiteSpace: 'nowrap'};
   return (
-    <div style={{position: 'absolute', left: 300, width: 730, top: 1430, height: 130, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22, opacity: out, scale: p * tap, ...box}}>
-      <div style={{padding: '20px 44px', borderRadius: 70, fontWeight: 800, fontSize: 54, letterSpacing: 1, color: done ? '#1a1a1a' : '#fff',
-        background: done ? '#f2f2f2' : '#ff1f1f', boxShadow: `0 14px 40px rgba(0,0,0,.45), 0 0 0 ${interpolate(g, [29, 46], [0, 34], clamp)}px rgba(255,255,255,${interpolate(g, [29, 46], [0.5, 0], clamp)})`}}>
-        {done ? 'SUBSCRIBED' : 'SUBSCRIBE'}
+    <div style={{position: 'absolute', left: 40, width: 1000, top: 1440, height: 150, opacity: inP * (1 - outP),
+      translate: `0px ${(1 - inP) * 60 + outP * 40}px`, fontFamily, ...box}}>
+      <div style={{position: 'absolute', inset: 0, borderRadius: 80, background: 'rgba(15,15,20,.93)', boxShadow: '0 18px 50px rgba(0,0,0,.5)'}} />
+      <Img src={staticFile('brand/logo.png')} style={{position: 'absolute', left: 30, top: 25, width: 100, height: 100, borderRadius: '50%'}} />
+      <div style={{position: 'absolute', left: 150, top: 0, height: 150, width: 395, display: 'flex', alignItems: 'center', fontWeight: 800, fontSize: name.length > 12 ? 38 : 46, color: '#fff', whiteSpace: 'nowrap'}}>{name}</div>
+      <div style={{position: 'absolute', left: 560, top: 29, width: 320, height: 92, borderRadius: 50, fontWeight: 800, fontSize: 38,
+        background: interpolateColors(done, [0, 1], ['#ff0033', '#3a3a40']), scale: g < 44 ? press : 1,
+        boxShadow: `0 0 0 ${ripple * 30}px rgba(255,255,255,${0.35 * (1 - ripple)})`}}>
+        <div style={{...label, color: '#fff', opacity: 1 - done}}>SUBSCRIBE</div>
+        <div style={{...label, color: '#d8d8de', opacity: done}}>SUBSCRIBED ✓</div>
       </div>
-      <div style={{position: 'relative', width: 96, height: 96, rotate: `${done ? Math.sin(g / 1.6) * interpolate(g, [29, 60], [22, 0], clamp) : 0}deg`, transformOrigin: '50% 10%'}}>
-        <Img src={staticFile('emoji/bell.svg')} style={{width: 96, height: 96, filter: 'drop-shadow(0 10px 20px rgba(0,0,0,.4))'}} />
+      <div style={{position: 'absolute', left: 893, top: 33, width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center', rotate: `${ring}deg`, transformOrigin: '50% 12%', scale: g >= 44 ? press : 1}}>
+        <Img src={staticFile('emoji/bell.svg')} style={{width: 70, height: 70}} />
       </div>
+      <Hand style={{left: hx, top: hy, scale: press, opacity: handOp, transformOrigin: '37% 9%'}} />
     </div>
   );
+};
+
+// The curious kid (20 Nov 2026): a face pops up above the captions while the kid asks, so the conversation is visible
+const KidFace = ({spec, timing}) => {
+  const f = useCurrentFrame();
+  const t = f / FPS;
+  for (let k = 0; k < timing.scenes.length; k++) {
+    const kw = timing.scenes[k].words.filter((w) => w.kid);
+    if (!kw.length) continue;
+    const s = kw[0].s - 0.15, e = kw[kw.length - 1].e + 0.35;
+    if (t < s || t > e + 0.3) continue;
+    const ask = String(spec.scenes[k]?.ask || '');
+    const face = /!/.test(ask) ? 'astonished_face' : 'thinking_face';
+    const inP = spring({frame: f - Math.round(s * FPS), fps: FPS, config: {damping: 13, stiffness: 170}});
+    const out = interpolate(t, [e, e + 0.3], [1, 0], clamp);
+    return (
+      <div style={{position: 'absolute', left: 850, top: 960, width: 190, height: 190, opacity: out, scale: inP * (0.9 + 0.1 * out),
+        rotate: `${Math.sin(f / 5) * 4}deg`, transformOrigin: '50% 90%'}}>
+        <div style={{position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(127,243,255,.22)', boxShadow: '0 0 0 6px rgba(127,243,255,.55)'}} />
+        <Img src={staticFile(`emoji/${face}.svg`)} style={{position: 'absolute', left: 20, top: 20, width: 150, height: 150}} />
+      </div>
+    );
+  }
+  return null;
 };
 
 // quiet original background loop (composed in code, see ShortsFactory/music): fades in under the hook and out at the end
@@ -305,13 +360,14 @@ export const Video = ({jobId, spec, timing}) => {
         );
       })}
       <BrainyLayer spec={spec} timing={timing} />
+      <KidFace spec={spec} timing={timing} />
       {spec.photo
         ? <PhotoOpening jobId={jobId} spec={spec} hookEnd={starts[1] ?? 150} />
         : spec.opening === 'slam'
         ? <SlamOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />
         : <HookOpening text={spec.hookText} hero={spec.scenes[0]?.items?.[0]?.emoji} />}
       <Captions timing={timing} hideUntil={spec.hookText ? openFrames(spec) + 4 : 0} />
-      <SubscribeNudge timing={timing} />
+      <SubscribeNudge timing={timing} name={spec.lang === 'hi' ? 'Brainyvoo Hindi' : 'Brainyvoo'} />
       <Music total={durationFor(timing)} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
       {spec.hookText && <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />}

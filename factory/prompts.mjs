@@ -86,7 +86,7 @@ export const STORY_CATEGORIES_HI = [
   'Indian kings and queens who did something clever (no battles)', 'accidental inventions and discoveries', 'record-breaking Indian journeys', 'unbelievable coincidences',
 ];
 
-export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false, insights = ''}) {
+export function scriptPrompt({category, topic, used, emojiNames, feedback, story = false, insights = '', series = null, kidOpens = false}) {
   return `You write scripts for "Brainyvoo", a YouTube Shorts channel. Brainy, a cute cartoon brain mascot, narrates ONE mind-blowing but TRUE fact per video. Audience: curious people of all ages. Tone: warm, punchy, playful, simple words. Never clickbait a false claim.
 
 TASK: ${topic ? `Write a script about: "${topic}".` : story ? `Tell ONE gripping, TRUE, well-documented story in the theme "${category}": a real event, person or animal with a clear beginning, a problem, a turning point and a surprising ending.` : `Pick ONE surprising, well-documented topic in the category "${category}".`}
@@ -100,6 +100,7 @@ ${story ? `STORY RULES (this video is a true story, not a list of facts)
 - Only use a stat scene for a real, meaningful number from the sources (a weight, a distance, a year count), never a filler number like 1.
 - Legends that grew around the story (for example "he never dropped a single shell") must be told as legends ("soldiers said...") or left out.
 ` : ''}
+${series ? seriesRules(series) : ''}
 ${used.length ? `Do NOT repeat any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
 ${feedback ? `A fact-checker rejected the previous draft for these reasons, fix them or pick a different topic: ${feedback}` : ''}
 ${insights ? `WHAT THIS CHANNEL'S VIEWERS WATCH (real view counts): ${insights} Learn from the pattern: prefer the kind of subject, hook and title wording of the most watched ones, and avoid the style of the least watched. Never repeat their topics.` : ''}
@@ -109,7 +110,7 @@ HARD RULES
 - Child safety: many viewers are children. Never pick or phrase a fact so that copying it could hurt someone (swallowing objects or chemicals, fire, electricity, holding breath, dangerous stunts, dieting or medical advice). If a topic touches this, tell it as something that happens in nature or in a lab, and never as something the viewer could try.
 - Choose facts that are settled and uncontroversial with one widely agreed number. AVOID contested records ("biggest ever", "fastest ever", dinosaur sizes), outdated figures and superlatives unless certain. Use metric units exactly as spoken.
 - The title must be literally true and fully delivered by the script. It must NAME the subject (the animal, person, object or event) in plain words so a stranger knows what the video is about, and add one curiosity gap. Bad (vague): "The snack that changed history". Good: "A melted chocolate bar invented the microwave".
-- ${story ? '5 to 7 scenes. Total narration 70 to 95 words (30 to 38 seconds spoken).' : '4 to 6 scenes. Total narration 48 to 68 words (20 to 26 seconds spoken). Every word must earn its place: cut warm-ups, repeats and filler.'}
+- ${story ? '5 to 7 scenes. Total narration 70 to 95 words, plus the kid\'s short asks (about 35 to 42 seconds spoken).' : '4 to 6 scenes. Total narration 55 to 78 words, plus the kid\'s short asks (about 30 to 35 seconds spoken). Every word must earn its place: cut warm-ups, repeats and filler.'}
 - Scene 1 MUST be type "hook" and must stop the scroll in the first second: ONE short, bold sentence (6-14 words) that says the single most surprising TRUE claim of the video straight away and NAMES the subject in plain words, so a stranger instantly knows what this is about and thinks "no way, how?". Numbers are welcome. Viewers swipe away from vague teases, so NEVER write one. NEVER open with "Did you know", "Have you ever", "In this video", "Today" or "Hey guys". Bad (vague, nobody knows what it is about): "There is a massive secret about our neighborhood." / "This sleepy animal beats a dolphin at one thing." Good (the claim itself): "A T-Rex lived closer in time to you than to a Stegosaurus." / "This shrimp punches so fast that the water around it boils." / "A sloth can hold its breath longer than a dolphin."${story ? ' For a story, the hook says who or what it is about and the most unbelievable true thing that happened, but it keeps the ending for later.' : ''} Only the first item in the hook is required; up to 3 badges show related things.
 - The FIRST item of the hook scene is shown huge on screen from the very first frame. It must be the most literal emoji of the main subject (the animal, object or body part the video is about).
 - "hookText": 3-6 words shown huge over a real photo in the first second, and the only text on screen at that moment. It is the hook's claim squeezed into a headline that NAMES the subject, for example "T-REX NEVER MET STEGOSAURUS", "THIS SHRIMP BOILS WATER", "OCTOPUSES HAVE 3 HEARTS". Never a vague phrase like "TOTAL SPACE DOMINATION" or "IT NEVER GOES AWAY". No emojis, no word longer than 12 letters.
@@ -117,6 +118,8 @@ HARD RULES
 - SUBSCRIBE ASK (very important): the scene right BEFORE the final twist scene must END with one quick, playful sentence of 4 to 9 words that contains the word "subscribe" and gives a reason tied to this video's answer, so viewers subscribe while they are still curious. Examples: "Subscribe, because the answer is wild." / "Quick, subscribe before I tell you!" / "Subscribe if you can guess it." Write a fresh one each time. It appears exactly once before the outro. It is NEVER a scene of its own: it is the last sentence inside a normal scene that first says 8 or more words about the topic.
 - Scene 2 says why the claim sounds impossible, or asks the "how?" the viewer is thinking. The middle scenes then prove and explain it with concrete numbers.
 - SAVE ONE FINAL TWIST: the last scene before the outro delivers an even stranger related fact that the hook did not mention ("And the craziest part..."). That is the payoff viewers stay for. It should be a compare, stat, bars or bigword scene with a clear visual reveal, not a static row of icons.
+- DIALOGUE (this channel's style): Brainy tells the fact to a curious little kid. Give 2 or 3 scenes an "ask": the kid's short, natural reaction or question (2 to 8 words) spoken just BEFORE that scene's narration, which then answers it. Examples: "Wait, three hearts?!", "But how is that possible?", "Then what happened?", "Seriously?!". The kid never states facts, never says "subscribe", and the outro has no ask. ${kidOpens ? 'In THIS video the hook scene also gets an ask: the kid\'s opening question that NAMES the subject (for example "Brainy, how did the octopus get three hearts?"), and Brainy\'s hook narration answers it with the surprising claim.' : 'In THIS video the hook has NO ask: Brainy opens with the claim himself.'}
+- WRITE FOR THE EAR, like a great storyteller: vary sentence length, use "..." 1 to 3 times for a dramatic pause right before a reveal ("It weighed... as much as an elephant!"), exclamations on the surprises, and a rhetorical question to build suspense. The voice actor follows your punctuation.
 - Keep the energy high: short sentences, vivid verbs, no filler.
 - Last scene MUST be type "outro" with narration exactly: "${OUTRO.en}"
 - Middle scenes: use at least 3 DIFFERENT types from trio, compare, stat, orbit, journey, bars, timeline, bigword, and no more than one trio. Prefer the type that SHOWS the fact: bars for comparing amounts, timeline for a sequence, bigword for the shock line. Each middle scene narration is 1-2 short spoken sentences (8-18 words) and the visual must match what is being said.
@@ -139,12 +142,35 @@ OUTPUT exactly one JSON object:
  "description": "2 short sentences that add context + 3 to 5 hashtags including #shorts",
  "tags": ["8 to 12 search tags"],
  "sources": ["1 to 3 credible sources supporting the main facts"],
- "scenes": [ ... ]
+ "scenes": [ ... each scene may also have "ask": "kid line" ... ]${series && series.next ? ',\n "nextTease": "the cliffhanger line about the next fact"' : ''}
 }
 
 ALLOWED EMOJI:
 ${emojiNames.join(', ')}`;
 }
+
+// 3 connected Shorts a day (19 Nov 2026, Vivan's idea): each one is complete on its own, but ends with a cliffhanger about
+// the next fact in the chain, so viewers who want more go to the next video (and subscribe).
+function seriesRules({n, total, theme, prev, next}) {
+  return `SERIES (important): this video is fact ${n} of ${total} in a connected chain about "${theme}". Its topic is fixed by the TASK above.
+- It must be COMPLETE on its own: a new viewer who never saw the other videos understands everything and gets a full payoff.
+${prev ? `- The previous fact in the chain was about: "${prev}". You may mention it in ONE short phrase for regular viewers, but never depend on it.\n` : ''}${next ? `- Also write "nextTease": ONE short spoken cliffhanger (6 to 14 words) about the NEXT fact in the chain, which will be about: "${next}". Ask the question it answers, do not answer it, and end with "That's the next fact!" (Hindi: "वो अगले वीडियो में!"). Example: "But why did the whole lake suddenly turn pink? That's the next fact!"\n` : ''}`;
+}
+
+export function seriesPlanPrompt({category, used, lang}) {
+  return `Plan a chain of 3 connected YouTube Shorts facts for the channel "Brainyvoo" (a cartoon brain explains true, surprising facts${lang === 'hi' ? ' to Indian viewers, in Hindi' : ''}).
+Category: "${category}".
+- Each fact is a complete, surprising, well-documented fact on its own (mainstream sources, settled numbers, family-friendly, nothing a child could copy and get hurt).
+- Fact 2 grows naturally out of fact 1, and fact 3 out of fact 2, so a viewer who finishes one wants the next ("...and that is why the lake turned pink"). Same subject or theme, but a DIFFERENT surprising fact each time, never parts of one story.
+- Fact 3 is the most mind-blowing.
+${used.length ? `- Do NOT use any of these already-used topics: ${used.slice(-120).join(' | ')}` : ''}
+Return JSON: {"theme": "2-6 words", "facts": [{"topic": "one specific fact in 6-15 English words"}, {"topic": "..."}, {"topic": "..."}]}`;
+}
+
+export const OUTRO_NEXT = {
+  en: 'Subscribe to Brainyvoo so you never miss it!',
+  hi: 'ब्रेनीवू को सब्सक्राइब करें, ताकि अगला फैक्ट मिस न हो!',
+};
 
 export const OUTRO = {
   en: 'Subscribe to Brainyvoo for new weird facts every day!',
@@ -158,6 +184,7 @@ export function withLanguage(prompt, lang) {
 
 LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a HINDI channel.
 - Every "narration", "hookText", "title", "description", "label", "big" text and chapter "title" is in natural, simple, spoken Hindi written in Devanagari script, the way a friendly Indian YouTuber talks. Common English words that Indians say in Hindi (science, planet, record, battery) are fine, written in Devanagari.
+- Word counts above are for English: in Hindi the narration may be up to 15% longer in words, never longer in seconds.
 - Write numbers in narration as Hindi words (for example "चालीस", "दो सौ"). On-screen "value" fields stay numbers.
 - "photo" (its subject and queries) stays in English. No hookText word may be longer than 12 letters.
 - The outro narration must be exactly: "${OUTRO.hi}"
@@ -166,7 +193,8 @@ LANGUAGE OVERRIDE (this beats any English-only rule above): this video is for a 
 - Speak like a friendly Indian YouTuber, in everyday Hindi with the common English words people really use (Hinglish written in Devanagari: "सिर्फ़", "असल में", "स्पीड", "रिकॉर्ड"). Never stiff, bookish or Sanskrit-heavy Hindi.
 - DESI CONNECTION (this channel's signature): make the fact feel close to home for an Indian viewer. Explain EVERY big number with a comparison to something every Indian knows, for example a cricket pitch (about 20 meters), an auto-rickshaw (about 2.6 meters long), a Mumbai local train, Qutub Minar (73 meters), a two-rupee coin, a cup of chai, a samosa, the distance from Delhi to Mumbai (about 1,400 kilometers), an elephant, a school bus. If the topic is from India, say where in India. Comparisons must be accurate.
 - The "title" may add one English search word in Latin letters after the Hindi (for example "... | Octopus"), but it must start in Hindi.
-- "at", "dimAt" and "revealAt" must be one Hindi word copied exactly from that scene's narration.`;
+- "at", "dimAt" and "revealAt" must be one Hindi word copied exactly from that scene's narration.
+- Every "ask" (the kid's line) and the "nextTease" are in natural spoken Hindi in Devanagari, like a real Indian kid talking ("सच में?!", "पर कैसे?", "फिर क्या हुआ?"). Brainy calls the kid nothing in particular; the kid may call him "ब्रेनी भैया".`;
 }
 
 export function factCheckPrompt(spec) {

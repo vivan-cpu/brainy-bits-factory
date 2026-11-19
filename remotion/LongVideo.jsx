@@ -125,7 +125,7 @@ export const LongVideo = ({jobId, spec, timing}) => {
       <OpeningTitle text={spec.hookText} />
       <Progress spec={spec} timing={timing} />
       <Captions timing={timing} hideUntil={HOOK_FRAMES + 4} box={{left: 60, width: 720, top: 680, height: 300, fontSize: 66}} />
-      <SubscribeNudge timing={timing} box={{left: 60, width: 720, top: 930, height: 120}} />
+      <SubscribeNudge timing={timing} box={{left: 40, width: 1000, top: 900, height: 150}} name={spec.lang === 'hi' ? 'Brainyvoo Hindi' : 'Brainyvoo'} />
       <Music total={durationFor(timing)} volume={0.1} />
       <Audio src={staticFile(`jobs/${jobId}/voice.mp3`)} />
       <Audio src={staticFile('sfx/boom.wav')} volume={0.32} />

@@ -20,7 +20,7 @@ Repo variables: `YT_UPLOAD=1`, `YT_PRIVACY=public`, `YT_SCHEDULE=1`. Secrets: `G
 | Check | `qa.mjs` `checkSpec` | Structure rules. A failed check goes back to the writer as feedback (4 tries) |
 | Fact-check | `prompts.mjs` `factCheckPrompt` (Gemini, strict) | Rejects false claims, including the on-screen headline |
 | Photo | `photo.mjs` `findPhoto` | Real photo of the subject from Wikimedia Commons, picked by a vision check |
-| Voice | `tts.py` | Edge TTS with word timings (voices alternate: Guy, Brian). Kokoro is the offline fallback |
+| Voice | `tts.py` | ONE take for the whole video. Gemini speech (`gemini-3.1-flash-tts-preview`, voices Puck = Brainy, Leda = the kid), words timed by faster-whisper + letter alignment. Fallbacks: Edge (one take), then Kokoro |
 | Render | `remotion/` | 1080x1920, 30 fps |
 | QA | `qa.mjs` `checkVideo` | Length 15 to 59 s, resolution, loudness, no black frames |
 | Upload | `youtube.mjs` | Resumable upload, `publishAt` slots, photo credit in the description |
@@ -35,6 +35,11 @@ These came from real YouTube Studio numbers. Do not undo them without new data.
 - **One extra twist is saved for the end**, and the **subscribe ask** is the last sentence of the scene right before it (`askProblems`). An animated SUBSCRIBE button appears when the word is spoken (`SubscribeNudge`).
 - **Animals and ocean life get 3 to 8 times the views**, so `CATEGORIES` in `prompts.mjs` is weighted toward them.
 - **19 Nov 2026: Shorts are shorter.** Studio, 28 days: only 16.9% of Shorts-feed viewers stayed (83.1% swiped away); 94% of views come from the Shorts feed. Fact Shorts are now 48 to 68 words (20 to 26 s), stories 70 to 95 words, because a Short people finish beats a longer one they leave.
+- **20 Nov 2026: voice, dialogue and series** (Vivan's review of the first Hindi videos: flat voice, abrupt pauses, flickering subscribe button; model: an Instagram story reel where a kid asks and an elder answers).
+  - Abrupt pauses came from recording every scene separately (each clip had its own silence, plus a 0.22 s gap: 1.3 to 1.45 s of dead air between scenes). Now the whole video is one take (`tts.py` → `singleTake` in `run.mjs`), and pauses longer than 0.55 s are shortened to 0.4 s.
+  - Brainy now talks with a curious kid: 2 or 3 scenes have an `ask` (the kid's 2 to 8 word question or reaction, spoken before the scene's narration, shown in cyan captions; Brainy's mouth stays shut). Every other video the kid opens with a question that names the subject. Scripts use "..." for dramatic pauses.
+  - Shorts 1 to 3 of each daily run are one connected chain (`seriesPlanPrompt`): every video is complete on its own, and videos 1 and 2 end with a cliffhanger about the next fact (`nextTease` + `OUTRO_NEXT`). The 4th Short (a true story) stays separate. `SERIES=0` turns it off.
+  - The subscribe button is now a realistic bar (logo, channel name, a hand taps SUBSCRIBE, a smooth fade to SUBSCRIBED, then the bell).
 - **Titles name the subject.** "The snack that changed history" got 84 views; "Why an octopus has blue blood and three hearts" got 570.
 - **Publish hours are India daytime, chosen by Vivan on 18 Nov 2026** (`SLOTS` in `youtube.mjs`, in IST: 06:00, 10:00, 14:00, 18:00; long videos 16:00). Nothing after 18:00 IST, so every Short of the day is public by evening. Each run fills the next India day. Both channels use the same hours. Before this the English slots were US/UK daytime (15, 18, 21, 24 UTC); the audience was already mostly Asia (28 days to 14 Nov 2026: India 21%, US 7.5%, Philippines 6%, Indonesia 5%).
 - **Family-friendly always.** No mass-casualty stories, nothing a child could copy and get hurt, no private people in photos.

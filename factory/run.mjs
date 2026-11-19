@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {askJSON} from './gemini.mjs';
-import {CATEGORIES, CATEGORIES_HI, STORY_CATEGORIES, STORY_CATEGORIES_HI, OUTRO, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
+import {CATEGORIES, CATEGORIES_HI, STORY_CATEGORIES, STORY_CATEGORIES_HI, OUTRO, OUTRO_NEXT, seriesPlanPrompt, scriptPrompt, longPrompt, factCheckPrompt, withLanguage} from './prompts.mjs';
 import {checkSpec, checkLongSpec, checkVideo, collectEmojis} from './qa.mjs';
 import {duration, tool, run, npx, pcmMono} from './media.mjs';
 import {findPhoto} from './photo.mjs';
@@ -12,6 +12,7 @@ const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace
 const arg = (name, def) => { const i = process.argv.indexOf(`--${name}`); return i > -1 ? process.argv[i + 1] : def; };
 const COUNT = parseInt(arg('count', '1'), 10);
 const TOPIC = arg('topic', '');
+const SPEC_FILE = arg('spec', ''); // test: re-make a video from an existing spec.json (skips writing and fact-checking)
 const SKIP_FC = process.argv.includes('--skip-factcheck');
 const LONG = process.argv.includes('--long'); // 16:9 video of about 3-4 minutes instead of a Short
 const STORY_ONLY = process.argv.includes('--story'); // every Short in this run is a true story (for testing)
@@ -90,7 +91,7 @@ function repairSpec(spec) {
     }
   }
   const last = spec.scenes[spec.scenes.length - 1];
-  if (last?.type === 'outro') last.narration = OUTRO[LANG] || OUTRO.en;
+  if (last?.type === 'outro' && !(spec.nextTease && String(last.narration || '').includes(spec.nextTease))) last.narration = OUTRO[LANG] || OUTRO.en;
   spec.lang = LANG;
   spec.opening = history.length % 2 ? 'slam' : 'hero'; // two opening styles alternate, so their "stayed to watch" numbers can be compared
   if (!spec.hookText) spec.hookText = String(spec.title || '').split(/\s+/).slice(0, 4).join(' ');
@@ -99,13 +100,22 @@ function repairSpec(spec) {
   return spec;
 }
 
-async function writeScript(category, topic, story = false) {
-  const used = topic ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
+async function writeScript(category, topic, story = false, series = null, kidOpens = false) {
+  const used = topic && !series ? [] : history.map((h) => h.topic); // a requested topic may already be in the history (remakes)
   let feedback = '';
   for (let attempt = 1; attempt <= 4; attempt++) {
-    const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story, insights}), LANG));
+    const {model, json} = await askJSON(withLanguage((LONG ? longPrompt : scriptPrompt)({category, topic, used, emojiNames, feedback, story, insights, series, kidOpens}), LANG));
     const spec = repairSpec(json);
     if (story) spec.story = true;
+    if (series) {
+      spec.series = {n: series.n, total: series.total, theme: series.theme};
+      const outro = spec.scenes[spec.scenes.length - 1];
+      const tease = String(json.nextTease || '').trim();
+      if (series.next && outro?.type === 'outro') {
+        outro.narration = `${tease || (LANG === 'hi' ? 'इससे जुड़ा अगला फैक्ट और भी हैरान कर देगा, वो अगले वीडियो में!' : 'The next fact in this chain is even crazier. That\'s the next fact!')} ${OUTRO_NEXT[LANG] || OUTRO_NEXT.en}`;
+        spec.nextTease = tease || undefined;
+      }
+    }
     const problems = (LONG ? checkLongSpec : checkSpec)(spec, emojiSet);
     if (problems.length) { feedback = problems.join('; '); log(`  script attempt ${attempt} (${model}) failed checks: ${feedback}`); continue; }
     if (SKIP_FC) return spec;
@@ -133,8 +143,9 @@ function buildVoice(spec, id) {
   const pool = LANG === 'hi' ? VOICES_HI : VOICES;
   const voice0 = pool[history.length % pool.length];
   log(`  narrator: ${voice0.BRAINY_VOICE}`);
-  run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir], {env: {...process.env, ...voice0}});
+  run(PY, [...PY_ARGS, path.join(ROOT, 'factory/tts.py'), path.join(jobDir, 'spec.json'), jobDir], {env: {...process.env, ...voice0, BRAINY_LANG: LANG}});
   const voice = JSON.parse(fs.readFileSync(path.join(jobDir, 'words.json'), 'utf8'));
+  if (voice.single) return singleTake(voice, jobDir, id);
   const words = voice.scenes;
   const files = voice.files || words.map((_, k) => `scene_${k}.mp3`);
   log(`  voice engine: ${voice.engine || 'edge'}`);
@@ -153,6 +164,31 @@ function buildVoice(spec, id) {
   const cat = words.map((_, k) => `[a${k}]`).join('') + `concat=n=${words.length}:v=0:a=1[out]`;
   tool('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', `${pads};${cat}`, '-map', '[out]', '-ar', '44100', '-b:a', '160k', path.join(pubDir, 'voice.mp3')]);
   return {total: t - GAP, scenes, amp: loudness(path.join(pubDir, 'voice.mp3'))};
+}
+
+// 19 Nov 2026: the whole video is one recording (tts.py), so there are no dead gaps between scenes and the tone flows.
+// Each scene starts just before its first word; Brainy's mouth stays shut while the kid is talking.
+function singleTake(voice, jobDir, id) {
+  log(`  voice engine: ${voice.engine} (one take)`);
+  const pubDir = path.join(ROOT, 'public/jobs', id);
+  fs.mkdirSync(pubDir, {recursive: true});
+  const mp3 = path.join(pubDir, 'voice.mp3');
+  tool('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', path.join(jobDir, voice.file), '-ar', '44100', '-b:a', '160k', mp3]);
+  const total = duration(mp3);
+  const firsts = voice.scenes.map((ws) => (ws.length ? ws[0].s : null));
+  const starts = [];
+  for (let k = 0; k < firsts.length; k++) {
+    let st = k === 0 ? 0 : (firsts[k] ?? starts[k - 1] + 0.5) - 0.12;
+    if (k > 0) st = Math.max(st, starts[k - 1] + 0.4); // every scene stays on screen for a moment
+    starts.push(+st.toFixed(3));
+  }
+  const scenes = voice.scenes.map((ws, k) => ({start: starts[k], end: k + 1 < starts.length ? starts[k + 1] : total, words: ws}));
+  const amp = loudness(mp3);
+  for (const w of scenes.flatMap((sc) => sc.words)) {
+    if (!w.kid) continue;
+    for (let f = Math.floor(w.s * 30); f <= Math.ceil(w.e * 30) && f < amp.length; f++) amp[f] = 0;
+  }
+  return {total, scenes, amp};
 }
 
 // Per-frame (30 fps) loudness of the voice, 0..1, used to drive Brainy's mouth so lip-sync matches the real audio
@@ -184,7 +220,7 @@ function render(spec, timing, id) {
   return outFile;
 }
 
-async function makeOne(i) {
+async function makeOne(i, seriesPlan = null) {
   const day = Math.floor(Date.now() / 86400000);
   const cats = LANG === 'hi' ? CATEGORIES_HI : CATEGORIES;
   const category = cats[(day * 5 + i + (LONG ? 7 : 0)) % cats.length];
@@ -195,7 +231,10 @@ async function makeOne(i) {
   const stories = LANG === 'hi' ? STORY_CATEGORIES_HI : STORY_CATEGORIES;
   const storyTheme = stories[(day + i) % stories.length];
   log(`video ${i + 1}/${COUNT}: ${remake ? `remake of "${remake.title}"` : story ? `true story, theme "${storyTheme}"` : `category "${TOPIC || category}"`} (job ${id})`);
-  const spec = await writeScript(remake?.category || (story ? storyTheme : category), remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story);
+  const part = !story && !remake && seriesPlan && i < seriesPlan.facts.length ? i : -1;
+  const series = part >= 0 ? {n: part + 1, total: seriesPlan.facts.length, theme: seriesPlan.theme, prev: seriesPlan.facts[part - 1]?.topic, next: seriesPlan.facts[part + 1]?.topic} : null;
+  if (series) log(`  series "${series.theme}" fact ${series.n}/${series.total}: ${seriesPlan.facts[part].topic}`);
+  const spec = SPEC_FILE ? repairSpec(JSON.parse(fs.readFileSync(SPEC_FILE, 'utf8'))) : await writeScript(remake?.category || (story ? storyTheme : seriesPlan?.category || category), series ? seriesPlan.facts[part].topic : remake ? refurbTopic(remake) : (i === 0 ? TOPIC : ''), story, series, i % 2 === 0);
   fs.mkdirSync(path.join(ROOT, 'jobs', id), {recursive: true});
   if (!LONG && process.env.PHOTO === '1') { // OFF by default since 18 Nov 2026: photo-opening Shorts got 0-17 views vs 80-900 for cartoon openings. PHOTO=1 turns it back on
     const want = spec.photo || {};
@@ -232,7 +271,7 @@ async function makeOne(i) {
       const meta = {id, file: path.basename(file), long: LONG || undefined, thumb, opening: spec.opening, credit: spec.photo?.credit, title: spec.title, description: spec.description, tags: spec.tags || [], topic: spec.topic,
         category: spec.category, sources: spec.sources || [], duration: qa.duration, emojis: collectEmojis(spec)};
       fs.writeFileSync(path.join(ROOT, 'out', `${id}.json`), JSON.stringify(meta, null, 1));
-      history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category, opening: LONG ? undefined : spec.opening});
+      history.push({date: new Date().toISOString().slice(0, 10), topic: spec.topic, title: spec.title, category: spec.category, opening: LONG ? undefined : spec.opening, voice: timing.engine, series: spec.series ? `${spec.series.theme} ${spec.series.n}/${spec.series.total}` : undefined, kid: spec.scenes.some((s) => s.ask) || undefined});
       fs.writeFileSync(historyFile, JSON.stringify(history, null, 1));
       if (remake) { remake.made = true; fs.writeFileSync(refurbFile, JSON.stringify(refurb, null, 1)); }
       return meta;
@@ -244,8 +283,20 @@ async function makeOne(i) {
 
 fs.mkdirSync(path.join(ROOT, 'out'), {recursive: true});
 const made = [];
+// Shorts 1-3 of a daily run are one connected chain (a story stays last)
+let seriesPlan = null;
+if (!LONG && !TOPIC && !SPEC_FILE && !STORY_ONLY && COUNT >= 3 && process.env.SERIES !== '0') {
+  const day = Math.floor(Date.now() / 86400000);
+  const cats = LANG === 'hi' ? CATEGORIES_HI : CATEGORIES;
+  const category = cats[(day * 5) % cats.length];
+  try {
+    const {json} = await askJSON(seriesPlanPrompt({category, used: history.map((h) => h.topic), lang: LANG}));
+    const facts = (json.facts || []).filter((f) => String(f.topic || '').trim()).slice(0, 3);
+    if (facts.length === 3) { seriesPlan = {theme: String(json.theme || category), category, facts}; log(`series planned: "${seriesPlan.theme}"`); }
+  } catch (e) { log(`  series planning failed, making single Shorts: ${e.message}`); }
+}
 for (let i = 0; i < COUNT; i++) {
-  try { made.push(await makeOne(i)); }
+  try { made.push(await makeOne(i, seriesPlan)); }
   catch (e) { log(`  ✗ video ${i + 1} skipped: ${e.message}`); }
 }
 // the long video runs after the Shorts in the same job, so it adds to their manifest instead of replacing it

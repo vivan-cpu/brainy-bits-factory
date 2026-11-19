@@ -37,14 +37,24 @@ export function checkSpec(spec, emojiSet) {
     if (!DEV.test(spec.title || '')) problems.push('title must be in Hindi (Devanagari script), not English');
   }
   if (sc[sc.length - 1]?.type !== 'outro') problems.push('last scene is not an outro');
+  const asks = sc.filter((s) => String(s.ask || '').trim());
+  if (asks.length > 4) problems.push('too many kid asks: use 2 or 3');
+  sc.forEach((s, i) => {
+    const ask = String(s.ask || '').trim();
+    if (!ask) return;
+    if (ask.split(/\s+/).length > 10) problems.push(`scene ${i} ask is too long: the kid says 2 to 8 words`);
+    if (/subscri|सब्सक्राइब/i.test(ask)) problems.push(`scene ${i} ask: the kid never says subscribe`);
+    if (s.type === 'outro') problems.push('the outro has no ask');
+    if (spec.lang === 'hi' && !/[\u0900-\u097F]/.test(ask)) problems.push(`scene ${i} ask must be in Hindi (Devanagari)`);
+  });
   sc.forEach((s, i) => {
     if (!TYPES.has(s.type)) problems.push(`scene ${i} has unknown type ${s.type}`);
     problems.push(...shapeProblems(s, i));
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const words = sc.reduce((n, s) => n + (s.narration || '').split(/\s+/).length, 0);
-  const maxWords = spec.story ? 100 : 74; // 19 Nov 2026: Shorts under about 30 s keep more viewers
-  if (words < 40 || words > maxWords) problems.push(`narration is ${words} words: it must be ${spec.story ? '70 to 95' : '48 to 68'} words, cut filler`);
+  const maxWords = (spec.story ? 108 : 88) + (spec.lang === 'hi' ? 14 : 0); // 19 Nov 2026: Shorts under about 30 s keep more viewers
+  if (words < 40 || words > maxWords) problems.push(`narration is ${words} words: it must be ${spec.story ? '70 to 95' : '55 to 78'}${spec.lang === 'hi' ? ' (Hindi: up to 90)' : ''} words, cut filler`);
   if (!spec.title || spec.title.length > 100) problems.push('bad title');
   const middle = new Set(sc.slice(1, -1).map((s) => s.type));
   if (middle.size < 2) problems.push('not enough visual variety');
