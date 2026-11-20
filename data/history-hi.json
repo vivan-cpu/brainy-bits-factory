@@ -19,5 +19,23 @@
   "title": "तीखी मिर्च पर पानी पीने से आग क्यों बढ़ती है?",
   "category": "science of Indian food and festivals (no firecracker or fire how-to)",
   "opening": "hero"
+ },
+ {
+  "date": "2026-11-20",
+  "topic": "Cricket ball spin vs fan",
+  "title": "क्रिकेट बॉल पंखे से भी तेज़ घूमती है! | Cricket Ball",
+  "category": "science of cricket and sports",
+  "opening": "slam",
+  "series": "The Physics of Cricket 2/3",
+  "kid": true
+ },
+ {
+  "date": "2026-11-20",
+  "topic": "Physics of Cricket at high altitude",
+  "title": "ऊंचे मैदानों पर छक्के क्यों लंबे होते हैं? | Cricket",
+  "category": "science of cricket and sports",
+  "opening": "hero",
+  "series": "The Physics of Cricket 3/3",
+  "kid": true
  }
 ]
