@@ -377,5 +377,13 @@
   "title": "A failed weapon invented Super Glue",
   "category": "accidental inventions and discoveries",
   "opening": "hero"
+ },
+ {
+  "date": "2026-11-20",
+  "topic": "Apollo 11 Felt-Tip Pen Save",
+  "title": "A simple pen saved the Apollo 11 moon mission",
+  "category": "space missions",
+  "opening": "slam",
+  "kid": true
  }
 ]
