@@ -13,7 +13,7 @@ For how everything works and why, read `CLAUDE.md`.
 6. **QA + publisher** (`factory/qa.mjs`, `factory/youtube.mjs`): checks length, resolution, audio level and black frames. Then it publishes the day's Shorts as a GitHub Release and uploads them to YouTube once the YouTube secrets are set.
 
 ## Running it from your phone or iPad
-- **Automatic:** every day (the schedule is 02:30 UTC, but GitHub really starts it 7 to 11 hours later) it makes 4 Shorts (3 facts and 1 true story), plus a 3 to 4 minute video on Monday, Wednesday and Saturday.
+- **Automatic:** every day (the schedule is 02:30 UTC, but GitHub really starts it 7 to 11 hours later) it makes 4 English Shorts and 4 Hindi Shorts (3 connected facts and 1 true story each).
 - **On demand:** GitHub app → this repo → Actions → *Brainy Bits factory* → **Run workflow**. Pick how many Shorts, and optionally a topic.
 - **Get the videos:** repo → **Releases** → newest release → tap the `.mp4`. The release notes hold the ready-to-copy title, description and tags.
 

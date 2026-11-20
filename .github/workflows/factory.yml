@@ -2,7 +2,7 @@ name: Brainy Bits factory
 
 on:
   schedule:
-    # 4 Shorts a day, plus a long video on Mon/Wed/Sat. GitHub starts this repo's schedule 7 to 11 hours late
+    # 4 Shorts a day (long videos were dropped on 20 Nov 2026). GitHub starts this repo's schedule 7 to 11 hours late
     # (00:30 ran at about 07:00, 08:30 ran at about 19:20), so 02:30 UTC really starts between 09:30 and 13:30 UTC:
     # after the free Gemini quota resets (08:00 UTC) and before the first publish slot (15:00 UTC).
     - cron: '30 2 * * *'
@@ -14,9 +14,6 @@ on:
       topic:
         description: 'Optional topic for the first Short (leave empty = Brainy picks)'
         default: ''
-      long:
-        description: 'Also make the long video (1 = yes)'
-        default: '0'
 
 permissions:
   contents: write
@@ -74,22 +71,6 @@ jobs:
           RENDER_CONCURRENCY: '100%'
           BRAINY_TTS: auto
         run: node factory/run.mjs --count "$COUNT" --topic "$TOPIC"
-
-      - name: Make the daily long video (3-4 minutes, 16:9)
-        # Monday, Wednesday and Saturday. Never blocks the Shorts: if it fails or runs out of time, the Shorts still upload.
-        if: github.event_name == 'schedule' || github.event.inputs.long == '1'
-        continue-on-error: true
-        timeout-minutes: 80
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          PYTHON: python
-          RENDER_CONCURRENCY: '100%'
-          BRAINY_TTS: auto
-        run: |
-          # long videos go out on Monday, Wednesday and Saturday (a manual run with long=1 always makes one)
-          DAY=$(date -u +%u)
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$DAY" != "1" ] && [ "$DAY" != "3" ] && [ "$DAY" != "6" ]; then echo "no long video today"; exit 0; fi
-          node factory/run.mjs --long
 
       - name: Remember used topics
         if: always()

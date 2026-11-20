@@ -1,12 +1,12 @@
 # Brainy Bits factory: handbook
 
-This repo makes and uploads the videos for the YouTube channel **Brainyvoo** (@brainyvoo, renamed from "Brainy Bits facts" / @factsbrainybits on 18 Nov 2026, channel ID `UCEKBQxcGl0NTb2zot5bxu1A`). It runs by itself every day on GitHub Actions. The owner is Vivan (a school student, beginner at code). Explain things to him simply and keep replies short.
+This repo makes and uploads the videos for the YouTube channel **Brainyvoo** (@brainyvoo, renamed from "Brainy Bits facts" / @factsbrainybits on 18 Nov 2026, channel ID `UCEKBQxcGl0NTb2zot5bxu1A`). It runs by itself every day on GitHub Actions. The owner is Vivan, a beginner at code. Explain things simply and keep replies short. The repo is public (since 20 Nov 2026, for unlimited free Actions minutes): never commit keys, tokens or personal details.
 
 ## What runs every day
 `.github/workflows/factory.yml`, cron `30 2 * * *` UTC. GitHub starts this repo's schedule 7 to 11 hours late (00:30 ran at about 07:00; 08:30 ran at about 19:20 and missed the 15:00 and 18:00 publish slots), so 02:30 really starts between 09:30 and 13:30 UTC: after the free Gemini quota resets (08:00 UTC) and before the first slot. The best free model (`gemini-3-flash-preview`) has a small daily quota that local testing shares.
 
 1. `node factory/run.mjs --count 4` makes 4 Shorts: 3 facts and, last, 1 true story.
-2. On Monday, Wednesday and Saturday it also runs `node factory/run.mjs --long` (one 3 to 4 minute 16:9 video; takes about 45 minutes in the cloud).
+2. Long 16:9 videos were dropped on 20 Nov 2026 (Vivan: not working well). `node factory/run.mjs --long` still works by hand, but nothing runs it.
 3. It commits `data/history.json` (used topics), publishes a GitHub Release, then `factory/youtube.mjs` uploads everything with scheduled publish times.
 
 Repo variables: `YT_UPLOAD=1`, `YT_PRIVACY=public`, `YT_SCHEDULE=1`. Secrets: `GEMINI_API_KEY`, `YT_CLIENT_ID`, `YT_CLIENT_SECRET`, `YT_REFRESH_TOKEN`. Never print, paste or type secrets. Vivan enters codes and passwords himself.
@@ -89,13 +89,13 @@ git checkout data/history.json data/refurbish.json   # always undo the test's hi
 
 The workflow jobs `hi-gate` + `make-hi` make 4 Hindi Shorts a day and upload them at the same hours as English (06:00, 10:00, 14:00, 18:00 IST). Repo variables `HINDI=1`, `YT_HANDLE_HI`, `YT_CHANNEL_ID_HI` are set. Secret `YT_REFRESH_TOKEN_HI` is set (19 Nov 2026); `hi-gate` skips the job if it is ever removed. A local copy for laptop uploads is `~/.config/brainy-bits/yt-refresh-token-hi.txt` (never print it). Optional `HINDI_COUNT` (default 4).
 
-Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts and a long video that is 9 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
+Upload quota: both channels share one Google Cloud project. With 4 + 4 Shorts that is 8 uploads a day; if Hindi uploads fail with `quotaExceeded`, give the Hindi channel its own Cloud project (new client ID/secret as `YT_CLIENT_ID_HI` / `YT_CLIENT_SECRET_HI`) or ask Google for more quota.
 
 `youtube.mjs` takes `YT_LANG` (description footer and video language) and `YT_HANDLE` (subscribe link).
 
-## Things that need Vivan (or a parent)
+## Things that need Vivan
 - Phone verification of the channel (also unlocks custom thumbnails for long videos; until then `thumbnails.set` returns 403, which is expected).
-- Creating accounts or channels, accepting terms, AdSense (needs an adult).
+- Accepting terms, AdSense, anything with money.
 - Anything that deletes videos permanently: ask first.
 
 ## Known quirks
