@@ -163,7 +163,7 @@ function buildVoice(spec, id) {
   const pads = words.map((_, k) => `[${k}:a]apad=pad_dur=${GAP}[a${k}]`).join(';');
   const cat = words.map((_, k) => `[a${k}]`).join('') + `concat=n=${words.length}:v=0:a=1[out]`;
   tool('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...inputs, '-filter_complex', `${pads};${cat}`, '-map', '[out]', '-ar', '44100', '-b:a', '160k', path.join(pubDir, 'voice.mp3')]);
-  return {total: t - GAP, scenes, amp: loudness(path.join(pubDir, 'voice.mp3'))};
+  return {total: t - GAP, scenes, amp: loudness(path.join(pubDir, 'voice.mp3')), engine: voice.engine || 'edge'};
 }
 
 // 19 Nov 2026: the whole video is one recording (tts.py), so there are no dead gaps between scenes and the tone flows.
@@ -188,7 +188,7 @@ function singleTake(voice, jobDir, id) {
     if (!w.kid) continue;
     for (let f = Math.floor(w.s * 30); f <= Math.ceil(w.e * 30) && f < amp.length; f++) amp[f] = 0;
   }
-  return {total, scenes, amp};
+  return {total, scenes, amp, engine: voice.engine};
 }
 
 // Per-frame (30 fps) loudness of the voice, 0..1, used to drive Brainy's mouth so lip-sync matches the real audio

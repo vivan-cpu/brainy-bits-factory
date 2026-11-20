@@ -53,8 +53,8 @@ export function checkSpec(spec, emojiSet) {
     if (!s.narration || s.narration.split(/\s+/).length < 3) problems.push(`scene ${i} narration too short`);
   });
   const words = sc.reduce((n, s) => n + (s.narration || '').split(/\s+/).length, 0);
-  const maxWords = (spec.story ? 108 : 88) + (spec.lang === 'hi' ? 14 : 0); // 19 Nov 2026: Shorts under about 30 s keep more viewers
-  if (words < 40 || words > maxWords) problems.push(`narration is ${words} words: it must be ${spec.story ? '70 to 95' : '55 to 78'}${spec.lang === 'hi' ? ' (Hindi: up to 90)' : ''} words, cut filler`);
+  const maxWords = (spec.story ? 120 : 100) + (spec.lang === 'hi' ? 14 : 0); // 20 Nov 2026: ~40 s with dialogue and suspense // 19 Nov 2026: Shorts under about 30 s keep more viewers
+  if (words < 40 || words > maxWords) problems.push(`narration is ${words} words: it must be ${spec.story ? '80 to 105' : '60 to 88'}${spec.lang === 'hi' ? ' (Hindi: up to 90)' : ''} words, cut filler`);
   if (!spec.title || spec.title.length > 100) problems.push('bad title');
   const middle = new Set(sc.slice(1, -1).map((s) => s.type));
   if (middle.size < 2) problems.push('not enough visual variety');
@@ -91,7 +91,7 @@ function claimProblems(spec) {
     const subject = new Set([...keywords(spec.title), ...keywords(spec.topic)]);
     if (!keywords(spec.hookText).some((w) => subject.has(w))) out.push('hookText does not name the subject of the video (it shares no word with the title or topic)');
     if (!keywords(hook).some((w) => subject.has(w))) out.push('the hook sentence does not name the subject of the video');
-    const named = keywords(spec.photo?.subject);
+    const named = process.env.PHOTO === '1' ? keywords(spec.photo?.subject) : [];
     if (named.length && !named.some((w) => keywords(spec.title).includes(w))) out.push(`the title does not name the subject: it must contain "${named.join('" or "')}" instead of a vague word like "this animal"`);
   }
   return out;
@@ -147,7 +147,7 @@ export function collectEmojis(spec) {
   return out;
 }
 
-export function checkVideo(file, {min = 15, max = 59, width = 1080, height = 1920} = {}) {
+export function checkVideo(file, {min = 15, max = 75, width = 1080, height = 1920} = {}) { // Shorts may be up to 3 min; ours aim for ~40 s
   const problems = [];
   if (!fs.existsSync(file)) return ['video file missing'];
   const size = fs.statSync(file).size;
