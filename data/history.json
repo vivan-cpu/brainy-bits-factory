@@ -385,5 +385,33 @@
   "category": "space missions",
   "opening": "slam",
   "kid": true
+ },
+ {
+  "date": "2026-11-21",
+  "topic": "Ocean salt depth",
+  "title": "Ocean salt could bury the Earth",
+  "category": "ocean life",
+  "opening": "hero",
+  "voice": "gemini",
+  "series": "The Ocean's Frozen Secret 1/3",
+  "kid": true
+ },
+ {
+  "date": "2026-11-21",
+  "topic": "Sea ice salt rejection",
+  "title": "Why freezing ocean water kicks out salt",
+  "category": "ocean life",
+  "opening": "slam",
+  "voice": "gemini",
+  "series": "The Ocean's Frozen Secret 2/3",
+  "kid": true
+ },
+ {
+  "date": "2026-11-21",
+  "topic": "The Voyager Golden Records",
+  "title": "A golden record is now drifting through deep space",
+  "category": "unbelievable coincidences",
+  "opening": "hero",
+  "voice": "gemini"
  }
 ]
